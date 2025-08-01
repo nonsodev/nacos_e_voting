@@ -28,7 +28,7 @@ builder.Services.Configure<SkyBiometrySettings>(
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
-builder.Services.AddScoped<IFaceVerificationService, FaceVerificationService>();
+builder.Services.AddHttpClient<IFaceVerificationService, FaceVerificationService>();
 builder.Services.AddScoped<IVotingService, VotingService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 
@@ -70,12 +70,22 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
-
+else
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.RoutePrefix = string.Empty;
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LasuEVoting v1");
+    });
+}
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();

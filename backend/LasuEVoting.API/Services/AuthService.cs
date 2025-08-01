@@ -25,7 +25,6 @@ namespace LasuEVoting.API.Services
 
             if (user == null)
             {
-                // Create new user
                 user = new User
                 {
                     Email = email,
@@ -61,7 +60,7 @@ namespace LasuEVoting.API.Services
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<bool> UpdateMatricNumberAsync(int userId, string matricNumber)
+        public async Task<bool> UpdateDetailsNumberAsync(int userId, string matricNumber, string FullName)
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return false;
@@ -72,6 +71,7 @@ namespace LasuEVoting.API.Services
             if (existingUser != null) return false;
 
             user.MatricNumber = matricNumber;
+            user.FullName = FullName;
             user.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;

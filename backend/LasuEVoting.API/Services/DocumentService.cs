@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using LasuEVoting.API.Models;
+using System.Text;
 
 namespace LasuEVoting.API.Services
 {
@@ -63,7 +64,6 @@ namespace LasuEVoting.API.Services
                 {
                     File = new FileDescription(file.FileName, stream),
                     Folder = "course-forms",
-                    ResourceType = ResourceType.Raw
                 };
 
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);

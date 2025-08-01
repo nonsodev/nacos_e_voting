@@ -32,13 +32,13 @@ namespace LasuEVoting.API.Controllers
             _logger = logger;
         }
 
-        [HttpPost("update-matric")]
-        public async Task<IActionResult> UpdateMatricNumber([FromBody] UpdateMatricRequest request)
+        [HttpPost("update-details")]
+        public async Task<IActionResult> UpdateDetailsNumber([FromBody] UpdateDetailsRequest request)
         {
             try
             {
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-                var success = await _authService.UpdateMatricNumberAsync(userId, request.MatricNumber);
+                var success = await _authService.UpdateDetailsNumberAsync(userId, request.MatricNumber,request.FullName);
 
                 if (!success)
                     return BadRequest(new { message = "Failed to update matric number. It may already be in use." });
@@ -146,8 +146,9 @@ namespace LasuEVoting.API.Controllers
         }
     }
 
-    public class UpdateMatricRequest
+    public class UpdateDetailsRequest
     {
         public string MatricNumber { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
     }
 }

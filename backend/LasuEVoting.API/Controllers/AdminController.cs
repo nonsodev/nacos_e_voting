@@ -46,6 +46,12 @@ namespace LasuEVoting.API.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok("Admin endpoint working");
+        }
+
         [HttpPost("candidates")]
         public async Task<IActionResult> CreateCandidate([FromForm] CreateCandidateRequest request)
         {
