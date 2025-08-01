@@ -15,31 +15,39 @@ export default function VerificationPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState<VerificationStep>('matric')
   const [matricNumber, setMatricNumber] = useState('')
+  const [fullName, setFullName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleMatricSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+  
     if (!matricNumber.trim()) {
       toast.error('Please enter your matric number')
       return
     }
-
+  
+    if (!fullName.trim()) {
+      toast.error('Please enter your full name')
+      return
+    }
+  
     setIsLoading(true)
+  
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student/update-matric`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student/update-details`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.accessToken}`,
         },
-        body: JSON.stringify({ matricNumber }),
+        body: JSON.stringify({ matricNumber, fullName }),
       })
-
+  
       if (response.ok) {
         setCurrentStep('document')
-        toast.success('Matric number saved successfully')
+        toast.success('Details saved successfully')
       } else {
-        toast.error('Failed to save matric number')
+        toast.error('Failed to save details')
       }
     } catch (error) {
       toast.error('An error occurred')
@@ -47,7 +55,7 @@ export default function VerificationPage() {
       setIsLoading(false)
     }
   }
-
+  
   const handleDocumentUploaded = () => {
     setCurrentStep('face')
   }
@@ -66,7 +74,7 @@ export default function VerificationPage() {
         return (
           <div className="card max-w-md mx-auto">
             <h2 className="text-2xl font-semibold mb-6 text-center">
-              Enter Matric Number
+              Enter your details
             </h2>
             <form onSubmit={handleMatricSubmit}>
               <div className="mb-4">
@@ -78,9 +86,20 @@ export default function VerificationPage() {
                   value={matricNumber}
                   onChange={(e) => setMatricNumber(e.target.value)}
                   className="input"
-                  placeholder="e.g., 240144011"
+                  placeholder="e.g., 230591001"
                   required
                 />
+              </div>
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                  FullName
+                </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Adeola Adeolu Adeyemi"
+              />
               </div>
               <button
                 type="submit"

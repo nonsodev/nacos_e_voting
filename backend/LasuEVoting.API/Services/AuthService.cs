@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using LasuEVoting.API.Data;
 using LasuEVoting.API.Models;
+using System.Text.RegularExpressions;
 
 namespace LasuEVoting.API.Services
 {
@@ -60,22 +61,41 @@ namespace LasuEVoting.API.Services
             return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<bool> UpdateDetailsNumberAsync(int userId, string matricNumber, string FullName)
+        public async Task<bool> UpdateDetailsNumberAsync(int userId, string matricNumber, string fullName)
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return false;
 
-            // Check if matric number already exists
+            if (!IsValidMatricNumber(matricNumber))
+                return false;
+
             var existingUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.MatricNumber == matricNumber && u.Id != userId);
-            if (existingUser != null) return false;
+            if (existingUser != null)
+                return false;
 
             user.MatricNumber = matricNumber;
-            user.FullName = FullName;
+            user.FullName = fullName;
             user.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
             return true;
         }
+
+        private readonly HashSet<string> _allowedExceptions = new HashSet<string>
+        {
+            "210551003" 
+        };
+
+        private bool IsValidMatricNumber(string matricNumber)
+        {
+            if (_allowedExceptions.Contains(matricNumber))
+                return true;
+
+            return Regex.IsMatch(matricNumber, @"^\d{2}0591\d{3}$");
+        }
+
+
 
         public string GenerateJwtToken(User user)
         {

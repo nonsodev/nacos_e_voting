@@ -96,7 +96,7 @@ namespace LasuEVoting.API.Data
                 new User
                 {
                     Id = 1,
-                    Email = "admin@lasu.edu.ng",
+                    Email = "finestdan1979@gmail.com",
                     FullName = "System Administrator",
                     GoogleId = "admin-google-id",
                     IsAdmin = true,

@@ -33,7 +33,7 @@ namespace LasuEVoting.API.Controllers
         }
 
         [HttpPost("update-details")]
-        public async Task<IActionResult> UpdateDetailsNumber([FromBody] UpdateDetailsRequest request)
+        public async Task<IActionResult> UpdateDetails([FromBody] UpdateDetailsRequest request)
         {
             try
             {

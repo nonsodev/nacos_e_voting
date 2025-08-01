@@ -50,7 +50,7 @@ The database will be automatically created when the backend starts for the first
 ## Default Admin Account
 
 A default admin account is seeded with:
-- Email: admin@lasu.edu.ng
+- Email: finestdan1979@gmail.com
 - Google ID: admin-google-id
 
 ## Features Implemented
