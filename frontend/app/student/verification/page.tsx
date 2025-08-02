@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 import { DocumentUpload } from '../../components/student/document-upload'
@@ -149,16 +149,28 @@ export default function VerificationPage() {
     }
   }
 
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' })
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Account Verification
-          </h1>
-          <p className="text-gray-600">
-            Complete the verification process to activate your voting account
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Account Verification
+            </h1>
+            <p className="text-gray-600">
+              Complete the verification process to activate your voting account
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* Progress Steps */}

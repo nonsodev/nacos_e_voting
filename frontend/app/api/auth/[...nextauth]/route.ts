@@ -28,10 +28,11 @@ const authOptions: NextAuthOptions = {
           })
 
           if (response.ok) {
-            const userData = await response.json()
+            const { token: authToken, user: userData } = await response.json()
             user.role = userData.role
             user.isActivated = userData.isActivated
             user.matricNumber = userData.matricNumber
+            user.token = authToken // Store the JWT token
             return true
           }
         } catch (error) {
@@ -41,17 +42,23 @@ const authOptions: NextAuthOptions = {
       return false
     },
     async jwt({ token, user }) {
+      // Initial sign in
       if (user) {
         token.role = user.role
         token.isActivated = user.isActivated
         token.matricNumber = user.matricNumber
+        token.accessToken = user.token
       }
       return token
     },
     async session({ session, token }) {
-      session.user.role = token.role as string
-      session.user.isActivated = token.isActivated as boolean
-      session.user.matricNumber = token.matricNumber as string
+      // Send properties to the client
+      if (session.user) {
+        session.user.role = token.role
+        session.user.isActivated = token.isActivated
+        session.user.matricNumber = token.matricNumber
+        session.accessToken = token.accessToken
+      }
       return session
     },
   },

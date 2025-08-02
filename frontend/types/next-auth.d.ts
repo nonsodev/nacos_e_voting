@@ -18,6 +18,7 @@ declare module "next-auth" {
     role: string
     isActivated: boolean
     matricNumber?: string
+    token?: string
   }
 }
 
@@ -26,5 +27,6 @@ declare module "next-auth/jwt" {
     role: string
     isActivated: boolean
     matricNumber?: string
+    accessToken?: string
   }
 }
