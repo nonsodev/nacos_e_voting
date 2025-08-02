@@ -28,7 +28,7 @@ namespace LasuEVoting.API.Services
             try
             {
                 // Upload image to Cloudinary first
-                var imageUrl = await _documentService.UploadToCloudinaryAsync(faceImage);
+                var imageUrl = await _documentService.UploadImageToCloudinaryAsync(faceImage);
                 if (string.IsNullOrEmpty(imageUrl))
                     return false;
 

@@ -48,7 +48,7 @@ namespace LasuEVoting.API.Controllers
                         id = c.Id,
                         fullName = c.FullName,
                         matricNumber = c.MatricNumber,
-                        biography = c.Biography,
+                        nickName = c.NickName,
                         imageUrl = c.ImageUrl
                     }).ToList(),
                     hasVoted = _votingService.HasUserVotedForPositionAsync(userId, p.Id).Result

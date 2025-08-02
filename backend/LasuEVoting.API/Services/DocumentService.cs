@@ -39,7 +39,7 @@ namespace LasuEVoting.API.Services
                     return (false, null);
 
                 // Upload to Cloudinary
-                var documentUrl = await UploadToCloudinaryAsync(document);
+                var documentUrl = await UploadPdfToCloudinaryAsync(document);
                 if (string.IsNullOrEmpty(documentUrl))
                     return (false, null);
 
@@ -54,40 +54,73 @@ namespace LasuEVoting.API.Services
                 return (false, null);
             }
         }
-
-        public async Task<string> UploadToCloudinaryAsync(IFormFile file)
+        public async Task<string?> UploadPdfToCloudinaryAsync(IFormFile file, string folderName = "courseForms")
         {
-            try
-            {
-                using var stream = file.OpenReadStream();
-                var uploadParams = new RawUploadParams()
-                {
-                    File = new FileDescription(file.FileName, stream),
-                    Folder = "course-forms",
-                };
+            if (file == null || file.Length == 0)
+                return null;
+            if (file.ContentType.ToLower() != "application/pdf" || !file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                return null;
+            const long maxFileSize = 10 * 1024 * 1024; // 10MB
 
-                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                return uploadResult.SecureUrl?.ToString() ?? string.Empty;
-            }
-            catch (Exception ex)
+            if (file.Length > maxFileSize)
+                return null;
+
+
+            await using var stream = file.OpenReadStream();
+            var uploadParams = new RawUploadParams
             {
-                _logger.LogError(ex, "Error uploading to Cloudinary");
-                return string.Empty;
-            }
+                File = new FileDescription(file.FileName, stream),
+                Folder = folderName,
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            return uploadResult.StatusCode == System.Net.HttpStatusCode.OK
+                ? uploadResult.SecureUrl.ToString()
+                : null;
+        }
+
+        public async Task<string?> UploadImageToCloudinaryAsync(IFormFile file, string folderName = "faces")
+        {
+            if (file == null || file.Length == 0)
+                return null;
+            if (!file.ContentType.StartsWith("image/"))
+                return null;
+            const long maxFileSize = 10 * 1024 * 1024; // 10MB
+
+            if (file.Length > maxFileSize)
+                return null;
+
+
+            await using var stream = file.OpenReadStream();
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = folderName,
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            return uploadResult.StatusCode == System.Net.HttpStatusCode.OK
+                ? uploadResult.SecureUrl.ToString()
+                : null;
         }
 
         public async Task<bool> VerifyDocumentContentAsync(string documentUrl, string matricNumber, string fullName)
         {
             try
             {
-                // Download PDF from Cloudinary
                 using var httpClient = new HttpClient();
                 var pdfBytes = await httpClient.GetByteArrayAsync(documentUrl);
 
-                // Extract text from PDF
                 var extractedText = ExtractTextFromPdf(pdfBytes);
 
-                // Verify that the document contains the matric number and full name
                 var containsMatricNumber = extractedText.Contains(matricNumber, StringComparison.OrdinalIgnoreCase);
                 var containsFullName = ContainsFullName(extractedText, fullName);
 
@@ -127,7 +160,6 @@ namespace LasuEVoting.API.Services
 
         private bool ContainsFullName(string text, string fullName)
         {
-            // Split full name into parts and check if all parts are present
             var nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             
             foreach (var part in nameParts)
