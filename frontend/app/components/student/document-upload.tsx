@@ -44,11 +44,11 @@ export function DocumentUpload({ matricNumber, onSuccess }: DocumentUploadProps)
     setIsUploading(true)
     try {
       const formData = new FormData()
-      formData.append('document', uploadedFile)
+      formData.append('File', uploadedFile)
       formData.append('matricNumber', matricNumber)
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student/upload-document`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session?.accessToken}`,
         },
