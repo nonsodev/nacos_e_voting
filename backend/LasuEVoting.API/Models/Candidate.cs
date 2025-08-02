@@ -11,7 +11,7 @@ namespace LasuEVoting.API.Models
         
         public string? MatricNumber { get; set; }
         
-        public string? Biography { get; set; }
+        public string? NickName { get; set; }
         
         public string? ImageUrl { get; set; }
         

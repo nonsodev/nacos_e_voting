@@ -63,7 +63,7 @@ namespace LasuEVoting.API.Controllers
                 var candidate = await _adminService.CreateCandidateAsync(
                     request.FullName, 
                     request.MatricNumber, 
-                    request.Biography, 
+                    request.NickName, 
                     request.PositionId, 
                     request.Image);
 
@@ -287,7 +287,7 @@ namespace LasuEVoting.API.Controllers
     {
         public string FullName { get; set; } = string.Empty;
         public string? MatricNumber { get; set; }
-        public string? Biography { get; set; }
+        public string? NickName { get; set; }
         public int PositionId { get; set; }
         public IFormFile? Image { get; set; }
     }

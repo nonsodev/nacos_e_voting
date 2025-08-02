@@ -32,19 +32,19 @@ namespace LasuEVoting.API.Services
             return position;
         }
 
-        public async Task<Candidate> CreateCandidateAsync(string fullName, string? matricNumber, string? biography, int positionId, IFormFile? image = null)
+        public async Task<Candidate> CreateCandidateAsync(string fullName, string? matricNumber, string? NickName, int positionId, IFormFile? image = null)
         {
             string? imageUrl = null;
             if (image != null)
             {
-                imageUrl = await _documentService.UploadToCloudinaryAsync(image);
+                imageUrl = await _documentService.UploadImageToCloudinaryAsync(image);
             }
 
             var candidate = new Candidate
             {
                 FullName = fullName,
                 MatricNumber = matricNumber,
-                Biography = biography,
+                NickName = NickName,
                 PositionId = positionId,
                 ImageUrl = imageUrl,
                 CreatedAt = DateTime.UtcNow

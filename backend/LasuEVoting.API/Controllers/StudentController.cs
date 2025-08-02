@@ -4,6 +4,7 @@ using System.Security.Claims;
 using LasuEVoting.API.Services;
 using LasuEVoting.API.Data;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace LasuEVoting.API.Controllers
 {
@@ -51,12 +52,25 @@ namespace LasuEVoting.API.Controllers
                 return BadRequest(new { message = "Failed to update matric number" });
             }
         }
-
-        [HttpPost("upload-document")]
-        public async Task<IActionResult> UploadDocument([FromForm] IFormFile document, [FromForm] string matricNumber)
-        {
+        [HttpPut("upload-document")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadDocument([FromForm] UpdateDocsRequest updateDocsRequest)
+        { 
             try
             {
+                if (updateDocsRequest.File == null || updateDocsRequest.File.Length == 0)
+                    return BadRequest(new { message = "No document uploaded" });
+
+                if (updateDocsRequest.File.ContentType != "application/pdf")
+                    return BadRequest(new { message = "Only PDF files are allowed" });
+
+                if (updateDocsRequest.File.Length > 10 * 1024 * 1024)
+                    return BadRequest(new { message = "File too large. Max size is 10MB." });
+
+                var extension = Path.GetExtension(updateDocsRequest.File.FileName).ToLower();
+                if (extension != ".pdf")
+                    return BadRequest(new { message = "Only PDF files are allowed" });
+
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var user = await _authService.GetUserByIdAsync(userId);
 
@@ -64,12 +78,11 @@ namespace LasuEVoting.API.Controllers
                     return NotFound(new { message = "User not found" });
 
                 var (verified, documentUrl) = await _documentService.VerifyAndUploadDocumentAsync(
-                    document, matricNumber, user.FullName);
+                    updateDocsRequest.File, user.MatricNumber, user.FullName);
 
                 if (!verified || string.IsNullOrEmpty(documentUrl))
                     return BadRequest(new { message = "Document verification failed" });
 
-                // Update user record
                 user.DocumentUrl = documentUrl;
                 user.DocumentVerified = true;
                 user.UpdatedAt = DateTime.UtcNow;
@@ -84,8 +97,9 @@ namespace LasuEVoting.API.Controllers
             }
         }
 
+
         [HttpPost("verify-face")]
-        public async Task<IActionResult> VerifyFace([FromForm] IFormFile faceImage, [FromForm] string matricNumber)
+        public async Task<IActionResult> VerifyFace([FromForm] UpdateDocsRequest faceImage)
         {
             try
             {
@@ -98,7 +112,7 @@ namespace LasuEVoting.API.Controllers
                 if (!user.DocumentVerified)
                     return BadRequest(new { message = "Document must be verified first" });
 
-                var verified = await _faceVerificationService.VerifyAndRegisterFaceAsync(faceImage, matricNumber);
+                var verified = await _faceVerificationService.VerifyAndRegisterFaceAsync(faceImage.File, user.MatricNumber);
 
                 if (!verified)
                     return BadRequest(new { message = "Face verification failed" });
@@ -106,7 +120,7 @@ namespace LasuEVoting.API.Controllers
                 // Update user record
                 user.FaceVerified = true;
                 user.IsActivated = true; // Account is now fully activated
-                user.SkyBiometryUid = $"{matricNumber}@nacos_e_voting";
+                user.SkyBiometryUid = $"{user.MatricNumber}@nacos_e_voting";
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
@@ -151,4 +165,10 @@ namespace LasuEVoting.API.Controllers
         public string MatricNumber { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
     }
+    public class UpdateDocsRequest
+    {
+        [Required]
+        public IFormFile File { get; set; }
+    }
+
 }

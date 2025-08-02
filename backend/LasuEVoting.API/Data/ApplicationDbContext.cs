@@ -46,7 +46,7 @@ namespace LasuEVoting.API.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.MatricNumber).HasMaxLength(50);
-                entity.Property(e => e.Biography).HasMaxLength(2000);
+                entity.Property(e => e.NickName).HasMaxLength(2000);
                 
                 entity.HasOne(e => e.Position)
                       .WithMany(p => p.Candidates)

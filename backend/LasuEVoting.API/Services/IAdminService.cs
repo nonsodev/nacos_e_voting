@@ -1,3 +1,4 @@
+using LasuEVoting.API.Controllers;
 using LasuEVoting.API.Models;
 
 namespace LasuEVoting.API.Services
@@ -5,7 +6,7 @@ namespace LasuEVoting.API.Services
     public interface IAdminService
     {
         Task<Position> CreatePositionAsync(string title, string? description, int maxVotes = 1);
-        Task<Candidate> CreateCandidateAsync(string fullName, string? matricNumber, string? biography, int positionId, IFormFile? image = null);
+        Task<Candidate> CreateCandidateAsync(string fullName, string? matricNumber, string? NickName, int positionId, IFormFile file);
         Task<VotingSession> CreateVotingSessionAsync(string title, string? description, DateTime startTime, DateTime endTime, int createdByUserId);
         Task<bool> StartVotingAsync(int sessionId);
         Task<bool> EndVotingAsync(int sessionId);
