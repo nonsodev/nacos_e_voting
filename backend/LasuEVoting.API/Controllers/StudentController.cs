@@ -52,10 +52,12 @@ namespace LasuEVoting.API.Controllers
                 return BadRequest(new { message = "Failed to update matric number" });
             }
         }
+
+
         [HttpPut("upload-document")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocument([FromForm] UpdateDocsRequest updateDocsRequest)
-        { 
+        public async Task<IActionResult> UploadDocument([FromForm] UpdateDocsRequest updateDocsRequest, [FromForm] string matricNumber)
+        {
             try
             {
                 if (updateDocsRequest.File == null || updateDocsRequest.File.Length == 0)
@@ -71,24 +73,50 @@ namespace LasuEVoting.API.Controllers
                 if (extension != ".pdf")
                     return BadRequest(new { message = "Only PDF files are allowed" });
 
+                if (string.IsNullOrWhiteSpace(matricNumber))
+                    return BadRequest(new { message = "Matric number is required" });
+
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var user = await _authService.GetUserByIdAsync(userId);
 
                 if (user == null)
                     return NotFound(new { message = "User not found" });
 
-                var (verified, documentUrl) = await _documentService.VerifyAndUploadDocumentAsync(
-                    updateDocsRequest.File, user.MatricNumber, user.FullName);
+                bool verified;
+                string? documentUrl;
+
+                if (user.DocumentUrl == null)
+                {
+                    (verified, documentUrl) = await _documentService.VerifyAndUploadDocumentAsync(
+                        updateDocsRequest.File, matricNumber, user.FullName);
+                }
+                else
+                {
+                    (verified, documentUrl) = await _documentService.VerifyAndReplaceDocumentAsync(
+                        updateDocsRequest.File, user.DocumentUrl, matricNumber, user.FullName);
+                }
 
                 if (!verified || string.IsNullOrEmpty(documentUrl))
-                    return BadRequest(new { message = "Document verification failed" });
+
+                {
+                    user.DocumentVerified = false;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    return BadRequest(new { message = "Document verification failed" }); 
+                }
+                    
 
                 user.DocumentUrl = documentUrl;
                 user.DocumentVerified = true;
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
-                return Ok(new { verified = true, message = "Document verified successfully" });
+                return Ok(new
+                {
+                    verified = true,
+                    message = "Document verified successfully",
+                    documentUrl
+                });
             }
             catch (Exception ex)
             {
@@ -98,11 +126,34 @@ namespace LasuEVoting.API.Controllers
         }
 
 
+
         [HttpPost("verify-face")]
         public async Task<IActionResult> VerifyFace([FromForm] UpdateDocsRequest faceImage)
         {
             try
             {
+                var file = faceImage.File;
+
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "No image uploaded" });
+
+                if (file.Length > 10 * 1024 * 1024) // 10MB
+                    return BadRequest(new { message = "File too large. Max size is 10MB." });
+
+                // Allowed MIME types for images
+                var allowedImageTypes = new[] { "image/jpeg", "image/jpg", "image/png" };
+
+                // Allowed file extensions for images
+                var allowedExtensions = new[] { ".jpeg", ".jpg", ".png" };
+
+                var contentType = file.ContentType.ToLower();
+                var extension = Path.GetExtension(file.FileName).ToLower();
+
+                if (!allowedImageTypes.Contains(contentType) || !allowedExtensions.Contains(extension))
+                {
+                    return BadRequest(new { message = "Only image files (JPG, JPEG, PNG) are allowed." });
+                }
+
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var user = await _authService.GetUserByIdAsync(userId);
 
@@ -117,9 +168,8 @@ namespace LasuEVoting.API.Controllers
                 if (!verified)
                     return BadRequest(new { message = "Face verification failed" });
 
-                // Update user record
                 user.FaceVerified = true;
-                user.IsActivated = true; // Account is now fully activated
+                user.IsActivated = true;
                 user.SkyBiometryUid = $"{user.MatricNumber}@nacos_e_voting";
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();

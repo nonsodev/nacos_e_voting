@@ -52,33 +52,19 @@ namespace LasuEVoting.API.Controllers
             }
         }
 
+
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
-            try
+            var user = await _authService.GetCurrentUserAsync();
+            if (user.IsSuccessful)
             {
-                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-                var user = await _authService.GetUserByIdAsync(userId);
-
-                if (user == null)
-                    return NotFound(new { message = "User not found" });
-
-                return Ok(new
-                {
-                    id = user.Id,
-                    email = user.Email,
-                    fullName = user.FullName,
-                    matricNumber = user.MatricNumber,
-                    isActivated = user.IsActivated,
-                    role = user.IsAdmin ? "admin" : "student",
-                    profileImageUrl = user.ProfileImageUrl
-                });
+                return Ok(new { user.Value, user.Message });
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error getting current user");
-                return BadRequest(new { message = "Failed to get user information" });
+                return Unauthorized();
             }
         }
     }

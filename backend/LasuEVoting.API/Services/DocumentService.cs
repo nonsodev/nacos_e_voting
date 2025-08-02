@@ -12,8 +12,9 @@ namespace LasuEVoting.API.Services
     {
         private readonly Cloudinary _cloudinary;
         private readonly ILogger<DocumentService> _logger;
+        private readonly GeminiClient _geminiClient;
 
-        public DocumentService(IOptions<CloudinarySettings> cloudinarySettings, ILogger<DocumentService> logger)
+        public DocumentService(IOptions<CloudinarySettings> cloudinarySettings, ILogger<DocumentService> logger,GeminiClient geminiClient )
         {
             var account = new Account(
                 cloudinarySettings.Value.CloudName,
@@ -22,6 +23,7 @@ namespace LasuEVoting.API.Services
             );
             _cloudinary = new Cloudinary(account);
             _logger = logger;
+            _geminiClient = geminiClient;
         }
 
         public async Task<(bool verified, string? documentUrl)> VerifyAndUploadDocumentAsync(IFormFile document, string matricNumber, string fullName)
@@ -38,15 +40,16 @@ namespace LasuEVoting.API.Services
                 if (document.Length > 10 * 1024 * 1024) // 10MB
                     return (false, null);
 
-                // Upload to Cloudinary
+                var isVerified = await VerifyDocumentContentAsync(document, matricNumber, fullName);
+                if (!isVerified)
+                    return (false, null);
+
                 var documentUrl = await UploadPdfToCloudinaryAsync(document);
+
                 if (string.IsNullOrEmpty(documentUrl))
                     return (false, null);
 
-                // Verify document content
-                var isVerified = await VerifyDocumentContentAsync(documentUrl, matricNumber, fullName);
-
-                return (isVerified, documentUrl);
+                return (true, documentUrl);
             }
             catch (Exception ex)
             {
@@ -54,33 +57,137 @@ namespace LasuEVoting.API.Services
                 return (false, null);
             }
         }
-        public async Task<string?> UploadPdfToCloudinaryAsync(IFormFile file, string folderName = "courseForms")
+
+        public async Task<(bool verified, string? documentUrl)> VerifyAndReplaceDocumentAsync(IFormFile document, string imageUrl, string matricNumber, string fullName)
+        {
+            try
+            {
+                // Validate file
+                if (document == null || document.Length == 0)
+                    return (false, null);
+
+                if (document.ContentType != "application/pdf")
+                    return (false, null);
+
+                if (document.Length > 10 * 1024 * 1024) // 10MB
+                    return (false, null);
+
+                var isVerified = await VerifyDocumentContentAsync(document, matricNumber, fullName);
+                if (!isVerified)
+                    return (false, null);
+
+                var documentUrl = await ReplaceDocumentAsync(document, imageUrl);
+
+                if (string.IsNullOrEmpty(documentUrl))
+                    return (false, null);
+
+                return (true, documentUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error verifying and uploading document");
+                return (false, null);
+            }
+        }
+
+        private async Task<string?> UploadPdfToCloudinaryAsync(IFormFile file, string folderName = "courseForms")
         {
             if (file == null || file.Length == 0)
                 return null;
+
             if (file.ContentType.ToLower() != "application/pdf" || !file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 return null;
-            const long maxFileSize = 10 * 1024 * 1024; // 10MB
 
+            const long maxFileSize = 10 * 1024 * 1024; // 10MB
             if (file.Length > maxFileSize)
                 return null;
 
-
-            await using var stream = file.OpenReadStream();
-            var uploadParams = new RawUploadParams
+            try
             {
-                File = new FileDescription(file.FileName, stream),
-                Folder = folderName,
-                UseFilename = true,
-                UniqueFilename = true,
-                Overwrite = false
-            };
+                _logger.LogInformation("Starting PDF upload for file: {FileName}, ContentType: {ContentType}",
+                    file.FileName, file.ContentType);
 
-            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                await using var stream = file.OpenReadStream();
 
-            return uploadResult.StatusCode == System.Net.HttpStatusCode.OK
-                ? uploadResult.SecureUrl.ToString()
-                : null;
+                var uploadParams = new RawUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = "courseForms",
+                    UseFilename = true,
+                    UniqueFilename = true,
+                    Overwrite = false
+                };
+                _logger.LogInformation("Upload params created. Folder: {Folder}, UseFilename: {UseFilename}",
+                    folderName, uploadParams.UseFilename);
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                _logger.LogInformation("Upload completed. Status: {Status}, ResourceType: {ResourceType}, URL: {Url}",
+                    uploadResult.StatusCode, uploadResult.ResourceType, uploadResult.SecureUrl?.ToString());
+
+                if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var url = uploadResult.SecureUrl?.ToString();
+
+                    if (url != null && url.Contains("/raw/upload/"))
+                    {
+                        _logger.LogInformation("PDF uploaded successfully with correct raw URL: {Url}", url);
+                        return url;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("PDF uploaded but URL format is incorrect: {Url}", url);
+                        return url;
+                    }
+                }
+
+                _logger.LogError("PDF upload failed. Status: {Status}, Error: {Error}",
+                    uploadResult.StatusCode, uploadResult.Error?.Message);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception during PDF upload");
+                return null;
+            }
+        }
+
+        private async Task<string?> ReplaceDocumentAsync(IFormFile newFile, string oldImageUrl, string folderName = "courseForms")
+        {
+            if (!string.IsNullOrEmpty(oldImageUrl))
+            {
+                var publicId = ExtractPublicId(oldImageUrl);
+                if (!string.IsNullOrEmpty(publicId))
+                {
+                    await DeleteImageAsync(publicId);
+                }
+            }
+
+            return await UploadPdfToCloudinaryAsync(newFile, folderName);
+        }
+        public async Task DeleteImageAsync(string publicId)
+        {
+            var deletionParams = new DeletionParams(publicId);
+            await _cloudinary.DestroyAsync(deletionParams);
+        }
+        private string? ExtractPublicId(string imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl))
+                return null;
+
+            try
+            {
+                var uri = new Uri(imageUrl);
+                var segments = uri.AbsolutePath.Split('/');
+                var fileName = segments.Last();
+                var folder = segments[^2];
+                var publicId = $"{folder}/{System.IO.Path.GetFileNameWithoutExtension(fileName)}";
+                return publicId;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public async Task<string?> UploadImageToCloudinaryAsync(IFormFile file, string folderName = "faces")
@@ -112,29 +219,46 @@ namespace LasuEVoting.API.Services
                 : null;
         }
 
-        public async Task<bool> VerifyDocumentContentAsync(string documentUrl, string matricNumber, string fullName)
+        public async Task<bool> VerifyDocumentContentAsync(IFormFile file, string matricNumber, string fullName)
         {
             try
             {
-                using var httpClient = new HttpClient();
-                var pdfBytes = await httpClient.GetByteArrayAsync(documentUrl);
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                var pdfBytes = memoryStream.ToArray();
 
                 var extractedText = ExtractTextFromPdf(pdfBytes);
 
                 var containsMatricNumber = extractedText.Contains(matricNumber, StringComparison.OrdinalIgnoreCase);
                 var containsFullName = ContainsFullName(extractedText, fullName);
 
-                _logger.LogInformation($"Document verification - Matric: {containsMatricNumber}, Name: {containsFullName}");
-                _logger.LogInformation($"Extracted text preview: {extractedText.Substring(0, Math.Min(500, extractedText.Length))}");
+                if (containsMatricNumber && containsFullName)
+                {
+                    _logger.LogInformation("Text extraction succeeded. Skipping Gemini scan.");
+                    return true;
+                }
 
-                return containsMatricNumber && containsFullName;
+                var geminiResponse = await _geminiClient.GenerateContentFromImageAsync(pdfBytes, fullName, matricNumber);
+                _logger.LogInformation($"Gemini response: {geminiResponse}");
+
+                _logger.LogInformation($"[Gemini OCR] Response: {geminiResponse}");
+
+                if (geminiResponse.Contains("yes", StringComparison.OrdinalIgnoreCase) ||
+                    (geminiResponse.Contains(fullName, StringComparison.OrdinalIgnoreCase) &&
+                     geminiResponse.Contains(matricNumber, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return true;
+                    }
+
+                return false;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error verifying document content");
+                _logger.LogError(ex, "Error verifying document content from stream");
                 return false;
             }
         }
+
 
         private string ExtractTextFromPdf(byte[] pdfBytes)
         {
@@ -158,19 +282,61 @@ namespace LasuEVoting.API.Services
             }
         }
 
+
         private bool ContainsFullName(string text, string fullName)
         {
-            var nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            
-            foreach (var part in nameParts)
+            if (string.IsNullOrWhiteSpace(fullName))
+                return false;
+
+            var normalizedText = Normalize(text);
+            var nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                    .Select(Normalize)
+                                    .ToArray();
+
+            bool allPartsPresent = nameParts.All(part => normalizedText.Contains(part));
+
+            var permutations = GetPermutations(nameParts);
+            foreach (var permutation in permutations)
             {
-                if (part.Length > 2 && !text.Contains(part, StringComparison.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
+                var combined = string.Join(" ", permutation);
+                if (normalizedText.Contains(combined))
+                    return true;
             }
 
-            return true;
+            return allPartsPresent;
         }
+
+        private string Normalize(string input) =>
+            input.ToLowerInvariant().Replace("\n", " ").Replace("\r", " ").Trim();
+
+        private IEnumerable<IEnumerable<string>> GetPermutations(string[] parts)
+        {
+            return Permute(parts, 0, parts.Length - 1);
+        }
+
+        private IEnumerable<IEnumerable<string>> Permute(string[] parts, int l, int r)
+        {
+            if (l == r)
+                yield return parts.ToArray();
+            else
+            {
+                for (int i = l; i <= r; i++)
+                {
+                    Swap(parts, l, i);
+                    foreach (var perm in Permute(parts, l + 1, r))
+                        yield return perm;
+                    Swap(parts, l, i);
+                }
+            }
+        }
+
+        private void Swap(string[] array, int i, int j)
+        {
+            var temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+
+
     }
 }

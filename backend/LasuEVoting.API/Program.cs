@@ -7,13 +7,13 @@ using LasuEVoting.API.Services;
 using LasuEVoting.API.Models;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -26,28 +26,45 @@ builder.Services.Configure<CloudinarySettings>(
 builder.Services.Configure<SkyBiometrySettings>(
     builder.Configuration.GetSection("SkyBiometry"));
 
-// Services
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddHttpClient<IFaceVerificationService, FaceVerificationService>();
 builder.Services.AddScoped<IVotingService, VotingService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
 
-// JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? "your-super-secret-key-that-is-at-least-32-characters-long");
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddHttpClient<GeminiClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
+});
+
+var geminiApiKey = builder.Configuration["Gemini:ApiKey"]
+    ?? Environment.GetEnvironmentVariable("GOOGLE_GEMINI_API_KEY");
+
+builder.Services.AddSingleton<GeminiClient>(sp =>
+{
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient(nameof(GeminiClient));
+    return new GeminiClient(httpClient, geminiApiKey, model: "gemini-2.5-flash");
+});
 
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; 
 });
 
 builder.Services.Configure<IISServerOptions>(options =>
 {
-    options.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB
+    options.MaxRequestBodySize = 10 * 1024 * 1024; 
 });
-/*builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "LasuEVoting API",
+        Version = "v1"
+    });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme",
@@ -71,28 +88,35 @@ builder.Services.Configure<IISServerOptions>(options =>
             Array.Empty<string>()
         }
     });
-});*/
+});
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ClockSkew = TimeSpan.Zero
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
 
+builder.Logging.AddDebug();
 
-// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -106,7 +130,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 
 if (app.Environment.IsDevelopment())
 {
