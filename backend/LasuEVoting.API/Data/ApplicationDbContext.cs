@@ -29,7 +29,7 @@ namespace LasuEVoting.API.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.GoogleId).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.MatricNumber).HasMaxLength(50);
+                entity.Property(e => e.MatricNumber).IsRequired().HasMaxLength(50);
             });
 
             // Position configuration
@@ -38,14 +38,20 @@ namespace LasuEVoting.API.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Description).HasMaxLength(1000);
+
+                entity
+                .HasMany(p => p.Candidates)
+                .WithOne(c => c.Position)
+                .HasForeignKey(c => c.PositionId);
             });
+
 
             // Candidate configuration
             modelBuilder.Entity<Candidate>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.MatricNumber).HasMaxLength(50);
+                entity.Property(e => e.MatricNumber).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.NickName).HasMaxLength(2000);
                 
                 entity.HasOne(e => e.Position)
@@ -98,7 +104,19 @@ namespace LasuEVoting.API.Data
                     Id = 1,
                     Email = "finestdan1979@gmail.com",
                     FullName = "System Administrator",
+                    MatricNumber = "210591028",
                     GoogleId = "admin-google-id",
+                    IsAdmin = true,
+                    IsActivated = true,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new User
+                {
+                    Id = 2,
+                    Email = "oyebohm@gmail.com",
+                    MatricNumber = "230591247",
+                    FullName = "System Administrator",
+                    GoogleId = "102222353370985427662",
                     IsAdmin = true,
                     IsActivated = true,
                     CreatedAt = DateTime.UtcNow

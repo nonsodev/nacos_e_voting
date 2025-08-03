@@ -31,6 +31,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IFaceVerificationService, FaceVerificationService>();
 builder.Services.AddScoped<IVotingService, VotingService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddHttpClient();
 

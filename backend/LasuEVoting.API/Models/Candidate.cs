@@ -9,20 +9,18 @@ namespace LasuEVoting.API.Models
         [Required]
         public string FullName { get; set; } = string.Empty;
         
-        public string? MatricNumber { get; set; }
+        public string MatricNumber { get; set; }
         
-        public string? NickName { get; set; }
+        public string NickName { get; set; }
         
-        public string? ImageUrl { get; set; }
+        public string ImageUrl { get; set; }
         
         public int PositionId { get; set; }
         
         public bool IsActive { get; set; } = true;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // Navigation properties
-        public virtual Position Position { get; set; } = null!;
-        public virtual ICollection<Vote> Votes { get; set; } = new List<Vote>();
+        public virtual Position Position { get; set; } 
+        public virtual ICollection<Vote> Votes { get; set; } 
     }
 }

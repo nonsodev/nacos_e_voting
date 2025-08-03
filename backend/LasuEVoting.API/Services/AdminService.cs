@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LasuEVoting.API.Data;
 using LasuEVoting.API.Models;
+using Microsoft.Extensions.Logging;
 
 namespace LasuEVoting.API.Services
 {
@@ -32,28 +33,48 @@ namespace LasuEVoting.API.Services
             return position;
         }
 
-        public async Task<Candidate> CreateCandidateAsync(string fullName, string? matricNumber, string? NickName, int positionId, IFormFile? image = null)
+        public async Task<Candidate> CreateCandidateAsync(string fullName, string? matricNumber, string? nickName, int positionId, IFormFile? image = null)
         {
-            string? imageUrl = null;
-            if (image != null)
+            try
             {
-                imageUrl = await _documentService.UploadImageToCloudinaryAsync(image);
+                string? imageUrl = null;
+
+                if (image != null)
+                {
+                    imageUrl = await _documentService.UploadImageToCloudinaryAsync(image);
+                }
+
+                var existingCandidate = await _context.Candidates
+                    .FirstOrDefaultAsync(c => c.MatricNumber == matricNumber);
+
+                if (existingCandidate != null)
+                {
+                    _logger.LogWarning("Candidate with matric number {MatricNumber} already exists.", matricNumber);
+                    return null;
+                }
+
+                var candidate = new Candidate
+                {
+                    FullName = fullName,
+                    MatricNumber = matricNumber,
+                    NickName = nickName,
+                    PositionId = positionId,
+                    ImageUrl = imageUrl,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Candidates.Add(candidate);
+                await _context.SaveChangesAsync();
+
+                return candidate;
             }
-
-            var candidate = new Candidate
+            catch (Exception ex)
             {
-                FullName = fullName,
-                MatricNumber = matricNumber,
-                NickName = NickName,
-                PositionId = positionId,
-                ImageUrl = imageUrl,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.Candidates.Add(candidate);
-            await _context.SaveChangesAsync();
-            return candidate;
+                _logger.LogError(ex, "An error occurred while creating a candidate.");
+                throw; 
+            }
         }
+
 
         public async Task<VotingSession> CreateVotingSessionAsync(string title, string? description, DateTime startTime, DateTime endTime, int createdByUserId)
         {
@@ -120,30 +141,88 @@ namespace LasuEVoting.API.Services
             }
         }
 
-        public async Task<IEnumerable<Position>> GetAllPositionsAsync()
+        public async Task<IEnumerable<object>> GetAllPositionsAsync()
         {
-            return await _context.Positions
+            var positions = await _context.Positions
                 .Include(p => p.Candidates)
                 .OrderBy(p => p.Title)
-                .ToListAsync();
+                .ToListAsync(); // Still async here
+
+            var data = positions.Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.MaxVotes,
+                Candidates = (p.Candidates ?? new List<Candidate>())
+                    .Select(c => new
+                    {
+                        c.Id,
+                        c.FullName,
+                        c.NickName,
+                        c.ImageUrl
+                    })
+                    .ToList()
+            });
+
+            return data;
         }
 
-        public async Task<IEnumerable<Candidate>> GetAllCandidatesAsync()
+
+
+        public async Task<IEnumerable<object>> GetAllCandidatesAsync()
         {
-            return await _context.Candidates
+            var candidates = await _context.Candidates
                 .Include(c => c.Position)
-                .OrderBy(c => c.Position.Title)
+                .ToListAsync(); // Load from database first
+
+            var data = candidates
+                .OrderBy(c => c.Position?.Title ?? "")
                 .ThenBy(c => c.FullName)
-                .ToListAsync();
+                .Select(c => new
+                {
+                    c.Id,
+                    c.FullName,
+                    c.NickName,
+                    c.ImageUrl,
+                    PositionTitle = c.Position?.Title ?? "Unknown"
+                });
+
+            return data;
         }
 
-        public async Task<IEnumerable<VotingSession>> GetAllVotingSessionsAsync()
+
+        public async Task<IEnumerable<object>> GetAllVotingSessionsAsync()
         {
-            return await _context.VotingSessions
+            var sessions = await _context.VotingSessions
                 .Include(vs => vs.CreatedBy)
+                .ToListAsync(); 
+
+            var data = sessions
                 .OrderByDescending(vs => vs.CreatedAt)
-                .ToListAsync();
+                .Select(vs => new
+                {
+                    vs.Id,
+                    vs.Title,
+                    vs.Description,
+                    vs.StartTime,
+                    vs.EndTime,
+                    vs.IsActive,
+                    vs.CreatedAt,
+                    CreatedBy = vs.CreatedBy != null
+                        ? new
+                        {
+                            vs.CreatedBy.Id,
+                            vs.CreatedBy.FullName,
+                            vs.CreatedBy.Email
+                        }
+                        : null
+                });
+
+            return data;
         }
+
+
+
 
         public async Task<Dictionary<int, Dictionary<int, int>>> GetDetailedVoteResultsAsync()
         {

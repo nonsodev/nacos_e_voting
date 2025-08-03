@@ -10,9 +10,9 @@ namespace LasuEVoting.API.Services
         Task<VotingSession> CreateVotingSessionAsync(string title, string? description, DateTime startTime, DateTime endTime, int createdByUserId);
         Task<bool> StartVotingAsync(int sessionId);
         Task<bool> EndVotingAsync(int sessionId);
-        Task<IEnumerable<Position>> GetAllPositionsAsync();
-        Task<IEnumerable<Candidate>> GetAllCandidatesAsync();
-        Task<IEnumerable<VotingSession>> GetAllVotingSessionsAsync();
+        Task<IEnumerable<object>> GetAllPositionsAsync();
+        Task<IEnumerable<object>> GetAllCandidatesAsync();
+        Task<IEnumerable<object>> GetAllVotingSessionsAsync();
         Task<Dictionary<int, Dictionary<int, int>>> GetDetailedVoteResultsAsync();
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<bool> DeletePositionAsync(int positionId);
