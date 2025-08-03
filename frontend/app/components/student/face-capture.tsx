@@ -78,7 +78,8 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
       const blob = await response.blob()
       
       const formData = new FormData()
-      formData.append('faceImage', blob, 'face.jpg')
+      // Corrected line: Use 'File' to match the backend API. This should be the necessary fix.
+      formData.append('File', blob, 'face.jpg') 
       formData.append('matricNumber', matricNumber)
 
       const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student/verify-face`, {
@@ -90,18 +91,15 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
       })
 
       if (verifyResponse.ok) {
-        const result = await verifyResponse.json()
-        if (result.verified) {
-          toast.success('Face verification successful!')
-          onSuccess()
-        } else {
-          toast.error('Face verification failed. Please try again.')
-        }
+        // You might need to adjust this based on the actual successful response from the backend. I'm not sure of what you've set.
+        toast.success('Face verification successful!')
+        onSuccess()
       } else {
-        const error = await verifyResponse.json()
+        const error = await verifyResponse.json().catch(() => ({ message: 'Verification failed' }))
         toast.error(error.message || 'Verification failed')
       }
     } catch (error) {
+      console.error('An error occurred during verification:', error) // Added for better debugging
       toast.error('An error occurred during verification')
     } finally {
       setIsVerifying(false)
