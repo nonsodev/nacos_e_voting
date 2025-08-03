@@ -20,7 +20,7 @@ interface Candidate {
   id: number
   fullName: string
   matricNumber?: string
-  biography?: string
+  nickName?: string
   imageUrl?: string
 }
 

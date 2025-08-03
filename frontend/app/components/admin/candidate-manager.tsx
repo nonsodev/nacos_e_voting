@@ -9,13 +9,10 @@ interface Candidate {
   id: number
   fullName: string
   matricNumber?: string
-  biography?: string
+  nickName?: string
   imageUrl?: string
   isActive: boolean
-  position: {
-    id: number
-    title: string
-  }
+  positionTitle: string
 }
 
 interface Position {
@@ -32,7 +29,7 @@ export function CandidateManager() {
   const [formData, setFormData] = useState({
     fullName: '',
     matricNumber: '',
-    biography: '',
+    nickName: '',
     positionId: 0
   })
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -77,7 +74,7 @@ export function CandidateManager() {
       const formDataToSend = new FormData()
       formDataToSend.append('fullName', formData.fullName)
       formDataToSend.append('matricNumber', formData.matricNumber)
-      formDataToSend.append('biography', formData.biography)
+      formDataToSend.append('nickName', formData.nickName)
       formDataToSend.append('positionId', formData.positionId.toString())
       
       if (selectedImage) {
@@ -94,7 +91,7 @@ export function CandidateManager() {
 
       if (response.ok) {
         toast.success('Candidate created successfully')
-        setFormData({ fullName: '', matricNumber: '', biography: '', positionId: 0 })
+        setFormData({ fullName: '', matricNumber: '', nickName: '', positionId: 0 })
         setSelectedImage(null)
         setShowCreateForm(false)
         fetchData()
@@ -208,14 +205,14 @@ export function CandidateManager() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Biography
+                Nickname
               </label>
-              <textarea
-                value={formData.biography}
-                onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
+              <input
+                type="text"
+                value={formData.nickName}
+                onChange={(e) => setFormData({ ...formData, nickName: e.target.value })}
                 className="input"
-                rows={4}
-                placeholder="Brief description of the candidate..."
+                required
               />
             </div>
             <div>
@@ -265,16 +262,16 @@ export function CandidateManager() {
                   {candidate.fullName}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Position: {candidate.position.title}
+                Position: {candidate.positionTitle || "Unknown"}
                 </p>
                 {candidate.matricNumber && (
                   <p className="text-sm text-gray-600">
                     Matric: {candidate.matricNumber}
                   </p>
                 )}
-                {candidate.biography && (
+                {candidate.nickName && (
                   <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {candidate.biography}
+                    {candidate.nickName}
                   </p>
                 )}
                 <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs ${

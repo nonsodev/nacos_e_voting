@@ -18,7 +18,7 @@ interface Candidate {
   id: number
   fullName: string
   matricNumber?: string
-  biography?: string
+  nickName?: string
   imageUrl?: string
 }
 
@@ -155,9 +155,9 @@ export function VotingInterface({ positions, onVoteCast }: VotingInterfaceProps)
                           )}
                         </div>
                       </div>
-                      {candidate.biography && (
+                      {candidate.nickName && (
                         <p className="text-sm text-gray-600 line-clamp-3">
-                          {candidate.biography}
+                          {candidate.nickName}
                         </p>
                       )}
                     </div>
