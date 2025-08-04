@@ -3,16 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|c:\\users\\homepc\\nacos_e_voting\\backend\\lasuevoting.api\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|solutionrelative:lasuevoting.api\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|c:\\users\\homepc\\nacos_e_voting\\backend\\lasuevoting.api\\services\\adminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|solutionrelative:lasuevoting.api\\services\\adminservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|c:\\users\\homepc\\nacos_e_voting\\backend\\lasuevoting.api\\models\\position.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|solutionrelative:lasuevoting.api\\models\\position.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|c:\\users\\homepc\\nacos_e_voting\\backend\\lasuevoting.api\\models\\votingsession.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|solutionrelative:lasuevoting.api\\models\\votingsession.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|c:\\users\\homepc\\nacos_e_voting\\backend\\lasuevoting.api\\models\\position.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|solutionrelative:lasuevoting.api\\models\\position.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|LasuEVoting.API\\LasuEVoting.API.csproj|c:\\users\\homepc\\nacos_e_voting\\backend\\lasuevoting.api\\models\\candidate.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -26,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -38,6 +42,19 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AdminController.cs",
+              "DocumentMoniker": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Controllers\\AdminController.cs",
+              "RelativeDocumentMoniker": "LasuEVoting.API\\Controllers\\AdminController.cs",
+              "ToolTip": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Controllers\\AdminController.cs",
+              "RelativeToolTip": "LasuEVoting.API\\Controllers\\AdminController.cs",
+              "ViewState": "AgIAADcAAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-03T15:17:12.151Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
               "Title": "VotingSession.cs",
               "DocumentMoniker": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Models\\VotingSession.cs",
@@ -46,11 +63,12 @@
               "RelativeToolTip": "LasuEVoting.API\\Models\\VotingSession.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-02T16:10:21.474Z"
+              "WhenOpened": "2025-08-02T16:10:21.474Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "Position.cs",
               "DocumentMoniker": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Models\\Position.cs",
               "RelativeDocumentMoniker": "LasuEVoting.API\\Models\\Position.cs",
@@ -62,7 +80,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "Candidate.cs",
               "DocumentMoniker": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Models\\Candidate.cs",
               "RelativeDocumentMoniker": "LasuEVoting.API\\Models\\Candidate.cs",
@@ -75,13 +93,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "AdminService.cs",
               "DocumentMoniker": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Services\\AdminService.cs",
               "RelativeDocumentMoniker": "LasuEVoting.API\\Services\\AdminService.cs",
               "ToolTip": "C:\\Users\\HomePC\\nacos_e_voting\\backend\\LasuEVoting.API\\Services\\AdminService.cs",
               "RelativeToolTip": "LasuEVoting.API\\Services\\AdminService.cs",
-              "ViewState": "AgIAAIIAAAAAAAAAAAASwJAAAAAIAAAAAAAAAA==",
+              "ViewState": "AgIAACIAAAAAAAAAAAArwLMAAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-08-02T16:07:49.142Z",
               "EditorCaption": ""

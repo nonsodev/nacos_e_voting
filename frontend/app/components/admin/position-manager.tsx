@@ -149,11 +149,12 @@ export function PositionManager() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description
               </label>
-              <textarea
+              <input
+                type="text"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="input"
-                rows={3}
+                required
               />
             </div>
             <div>

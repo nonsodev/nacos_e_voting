@@ -173,11 +173,11 @@ namespace LasuEVoting.API.Services
         {
             var candidates = await _context.Candidates
                 .Include(c => c.Position)
-                .ToListAsync(); // Load from database first
+                .ToListAsync();
 
             var data = candidates
                 .OrderBy(c => c.Position?.Title ?? "")
-                .ThenBy(c => c.FullName)
+                .ThenBy(c => c.CreatedAt)
                 .Select(c => new
                 {
                     c.Id,
