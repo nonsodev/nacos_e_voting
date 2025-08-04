@@ -295,6 +295,9 @@ namespace LasuEVoting.API.Services
 
             bool allPartsPresent = nameParts.All(part => normalizedText.Contains(part));
 
+            if (!allPartsPresent)
+                return false;
+
             var permutations = GetPermutations(nameParts);
             foreach (var permutation in permutations)
             {
@@ -303,16 +306,43 @@ namespace LasuEVoting.API.Services
                     return true;
             }
 
-            return allPartsPresent;
+            return true;
         }
 
-        private string Normalize(string input) =>
-            input.ToLowerInvariant().Replace("\n", " ").Replace("\r", " ").Trim();
 
-        private IEnumerable<IEnumerable<string>> GetPermutations(string[] parts)
+        private string Normalize(string input)
         {
-            return Permute(parts, 0, parts.Length - 1);
+            return new string(input
+                .Where(c => !char.IsPunctuation(c))
+                .ToArray())
+                .ToLower()
+                .Trim();
         }
+
+
+        private List<string[]> GetPermutations(string[] array)
+        {
+            var result = new List<string[]>();
+            Permute(array, 0, result);
+            return result;
+        }
+
+        private void Permute(string[] array, int start, List<string[]> result)
+        {
+            if (start >= array.Length)
+            {
+                result.Add((string[])array.Clone());
+                return;
+            }
+
+            for (int i = start; i < array.Length; i++)
+            {
+                (array[start], array[i]) = (array[i], array[start]);
+                Permute(array, start + 1, result);
+                (array[start], array[i]) = (array[i], array[start]);
+            }
+        }
+
 
         private IEnumerable<IEnumerable<string>> Permute(string[] parts, int l, int r)
         {
