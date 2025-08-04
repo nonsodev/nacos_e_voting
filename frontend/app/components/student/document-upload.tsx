@@ -8,11 +8,13 @@ import { Button } from "../ui/button";
 
 interface DocumentUploadProps {
   matricNumber: string;
+  fullName: string;
   onSuccess: () => void;
 }
 
 export function DocumentUpload({
   matricNumber,
+  fullName,
   onSuccess,
 }: DocumentUploadProps) {
   const { data: session } = useSession();
@@ -44,6 +46,7 @@ export function DocumentUpload({
       const formData = new FormData();
       formData.append("File", uploadedFile);
       formData.append("matricNumber", matricNumber);
+      formData.append("fullName", fullName);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/student/upload-document`,

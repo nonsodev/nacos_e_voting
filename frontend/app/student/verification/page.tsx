@@ -20,36 +20,13 @@ export default function VerificationPage() {
   const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleMatricSubmit = async (e: React.FormEvent) => {
+  const handleMatricSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!matricNumber.trim() || !fullName.trim()) {
       toast.error("Please enter both your full name and matriculation number.");
       return;
     }
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/student/update-details`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.accessToken}`,
-          },
-          body: JSON.stringify({ matricNumber, fullName }),
-        }
-      );
-      if (response.ok) {
-        setCurrentStep("document");
-        toast.success("Details saved successfully");
-      } else {
-        toast.error("Failed to save details");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
+    setCurrentStep("document");
   };
 
   const handleDocumentUploaded = () => setCurrentStep("face");
@@ -123,20 +100,41 @@ export default function VerificationPage() {
             </form>
           </>
         );
-      case "document":
-        return (
-          <DocumentUpload
-            matricNumber={matricNumber}
-            onSuccess={handleDocumentUploaded}
-          />
-        );
-      case "face":
-        return (
-          <FaceCapture
-            matricNumber={matricNumber}
-            onSuccess={handleFaceVerified}
-          />
-        );
+        case "document":
+          return (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mb-4"
+                onClick={() => setCurrentStep("matric")}
+              >
+                ← Edit Name or Matric Number
+              </Button>
+              <DocumentUpload
+                matricNumber={matricNumber}
+                fullName={fullName}
+                onSuccess={handleDocumentUploaded}
+              />
+            </>
+          );        
+          case "face":
+            return (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mb-4"
+                  onClick={() => setCurrentStep("matric")}
+                >
+                  ← Edit Name or Matric Number
+                </Button>
+                <FaceCapture
+                  matricNumber={matricNumber}
+                  onSuccess={handleFaceVerified}
+                />
+              </>
+            );          
       case "complete":
         return (
           <div className="text-center py-8">
