@@ -64,10 +64,14 @@ export function ResultsViewer() {
     return Object.values(results).reduce((total, positionResults) => {
       return (
         total +
-        Object.values(positionResults).reduce((sum: number, votes) => sum + votes, 0)
+        Object.values(positionResults as { [candidateId: number]: number }).reduce(
+          (sum, votes) => sum + votes,
+          0 
+        )
       );
     }, 0);
   };
+  
 
   const getWinner = (position: Position): Candidate | null => {
     if (!position.candidates || position.candidates.length === 0) return null;

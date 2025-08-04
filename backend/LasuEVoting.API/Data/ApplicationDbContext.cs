@@ -29,7 +29,7 @@ namespace LasuEVoting.API.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.GoogleId).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.MatricNumber).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.MatricNumber).HasMaxLength(50);
             });
 
             // Position configuration
