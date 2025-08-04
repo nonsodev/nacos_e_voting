@@ -1,214 +1,258 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'react-hot-toast'
-import { DocumentUpload } from '../../components/student/document-upload'
-import { FaceCapture } from '../../components/student/face-capture'
-import { LoadingSpinner } from '../../components/ui/loading-spinner'
+import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
+import { DocumentUpload } from "../../components/student/document-upload";
+import { FaceCapture } from "../../components/student/face-capture";
+import { LoadingSpinner } from "../../components/ui/loading-spinner";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 
-type VerificationStep = 'matric' | 'document' | 'face' | 'complete'
+type VerificationStep = "matric" | "document" | "face" | "complete";
 
 export default function VerificationPage() {
-  const { data: session } = useSession()
-  const router = useRouter()
-  const [currentStep, setCurrentStep] = useState<VerificationStep>('matric')
-  const [matricNumber, setMatricNumber] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState<VerificationStep>("matric");
+  const [matricNumber, setMatricNumber] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleMatricSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-  
-    if (!matricNumber.trim()) {
-      toast.error('Please enter your matric number')
-      return
+    e.preventDefault();
+    if (!matricNumber.trim() || !fullName.trim()) {
+      toast.error("Please enter both your full name and matriculation number.");
+      return;
     }
-  
-    if (!fullName.trim()) {
-      toast.error('Please enter your full name')
-      return
-    }
-  
-    setIsLoading(true)
-  
+    setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student/update-details`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.accessToken}`,
-        },
-        body: JSON.stringify({ matricNumber, fullName }),
-      })
-  
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/student/update-details`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+          body: JSON.stringify({ matricNumber, fullName }),
+        }
+      );
       if (response.ok) {
-        setCurrentStep('document')
-        toast.success('Details saved successfully')
+        setCurrentStep("document");
+        toast.success("Details saved successfully");
       } else {
-        toast.error('Failed to save details')
+        toast.error("Failed to save details");
       }
     } catch (error) {
-      toast.error('An error occurred')
+      toast.error("An error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-  
-  const handleDocumentUploaded = () => {
-    setCurrentStep('face')
-  }
+  };
 
+  const handleDocumentUploaded = () => setCurrentStep("face");
   const handleFaceVerified = () => {
-    setCurrentStep('complete')
-    toast.success('Account verification complete!')
+    setCurrentStep("complete");
+    toast.success("Account verification complete!");
     setTimeout(() => {
-      router.push('/student/dashboard')
-    }, 2000)
-  }
+      router.push("/student/dashboard");
+    }, 2000);
+  };
 
-  const renderStep = () => {
+  const steps = [
+    { key: "matric", label: "Your Details" },
+    { key: "document", label: "Document Upload" },
+    { key: "face", label: "Face Verification" },
+  ];
+  const currentStepIndex = steps.findIndex((step) => step.key === currentStep);
+
+  const renderStepContent = () => {
     switch (currentStep) {
-      case 'matric':
+      case "matric":
         return (
-          <div className="card max-w-md mx-auto">
-            <h2 className="text-2xl font-semibold mb-6 text-center">
-              Enter your details
+          <>
+            <h2 className="text-2xl font-bold text-neutral-800 text-center mb-1">
+              Enter Your Details
             </h2>
-            <form onSubmit={handleMatricSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Matric Number
+            <p className="text-neutral-500 text-center mb-6">
+              This information must match your course form.
+            </p>
+            <form onSubmit={handleMatricSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Full Name *
                 </label>
-                <input
+                <Input
                   type="text"
-                  value={matricNumber}
-                  onChange={(e) => setMatricNumber(e.target.value)}
-                  className="input"
-                  placeholder="e.g., 230591001"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g., Adeola Adeolu Adeyemi"
                   required
                 />
               </div>
               <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                  FullName
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
+                  Matriculation Number *
                 </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Adeola Adeolu Adeyemi"
-              />
+                <Input
+                  type="text"
+                  value={matricNumber}
+                  onChange={(e) => setMatricNumber(e.target.value)}
+                  placeholder="e.g., 230591001"
+                  required
+                />
               </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn btn-primary w-full"
-              >
-                {isLoading ? <LoadingSpinner size="sm" /> : 'Continue'}
-              </button>
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" className="mr-2" /> Saving...
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
+                </Button>
+              </div>
             </form>
-          </div>
-        )
-
-      case 'document':
+          </>
+        );
+      case "document":
         return (
           <DocumentUpload
             matricNumber={matricNumber}
             onSuccess={handleDocumentUploaded}
           />
-        )
-
-      case 'face':
+        );
+      case "face":
         return (
           <FaceCapture
             matricNumber={matricNumber}
             onSuccess={handleFaceVerified}
           />
-        )
-
-      case 'complete':
+        );
+      case "complete":
         return (
-          <div className="card max-w-md mx-auto text-center">
-            <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-success/20 text-success rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg
+                className="w-12 h-12"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold mb-2">Verification Complete!</h2>
-            <p className="text-gray-600 mb-4">
-              Your account has been successfully verified. You can now access the voting platform.
+            <h2 className="text-3xl font-bold text-neutral-800 mb-2">
+              Verification Complete!
+            </h2>
+            <p className="text-neutral-600 mb-4">
+              You will be redirected to your dashboard shortly.
             </p>
             <LoadingSpinner className="mx-auto" />
           </div>
-        )
-
+        );
       default:
-        return null
+        return null;
     }
-  }
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' })
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Account Verification
+    <div className="min-h-screen bg-neutral-50">
+      <header className="bg-white shadow-sm border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-xl font-bold text-primary-dark">
+              LASU E-Voting
             </h1>
-            <p className="text-gray-600">
-              Complete the verification process to activate your voting account
-            </p>
+            <Button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              variant="secondary"
+              size="sm"
+            >
+              Sign Out
+            </Button>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-          >
-            Sign Out
-          </button>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-neutral-800">
+            Account Verification
+          </h1>
+          <p className="text-neutral-500 mt-1">
+            Complete these steps to activate your voting account.
+          </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            {[
-              { key: 'matric', label: 'Matric Number' },
-              { key: 'document', label: 'Document Upload' },
-              { key: 'face', label: 'Face Verification' },
-              { key: 'complete', label: 'Complete' },
-            ].map((step, index) => (
-              <div key={step.key} className="flex items-center">
+        <div className="mb-8 p-4 bg-white border border-neutral-200 rounded-lg">
+          <ol className="flex items-center w-full">
+            {steps.map((step, index) => (
+              <li
+                key={step.key}
+                className={`flex w-full items-center ${
+                  index < steps.length - 1
+                    ? "after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block"
+                    : ""
+                } ${
+                  index <= currentStepIndex
+                    ? "after:border-primary"
+                    : "after:border-neutral-200"
+                }`}
+              >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep === step.key
-                      ? 'bg-primary-600 text-white'
-                      : index < ['matric', 'document', 'face', 'complete'].indexOf(currentStep)
-                      ? 'bg-success-600 text-white'
-                      : 'bg-gray-300 text-gray-600'
-                  }`}
+                  className="flex items-center justify-center w-10 h-10 rounded-full lg:h-12 lg:w-12 shrink-0"
+                  style={{
+                    backgroundColor:
+                      index <= currentStepIndex
+                        ? "var(--color-primary)"
+                        : "var(--color-neutral-200)",
+                    color:
+                      index <= currentStepIndex
+                        ? "white"
+                        : "var(--color-neutral-600)",
+                  }}
                 >
-                  {index < ['matric', 'document', 'face', 'complete'].indexOf(currentStep) ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  {index < currentStepIndex ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   ) : (
-                    index + 1
+                    <span>{index + 1}</span>
                   )}
                 </div>
-                <span className="ml-2 text-sm text-gray-600">{step.label}</span>
-                {index < 3 && <div className="w-8 h-px bg-gray-300 ml-4" />}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
 
-        {renderStep()}
-      </div>
+        <div className="bg-white border border-neutral-200 rounded-lg p-6 md:p-8">
+          {renderStepContent()}
+        </div>
+      </main>
     </div>
-  )
+  );
 }

@@ -1,213 +1,219 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { toast } from 'react-hot-toast'
-import { LoadingSpinner } from '../ui/loading-spinner'
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { toast } from "react-hot-toast";
+import { LoadingSpinner } from "../ui/loading-spinner";
+import { Button } from "../ui/button"; 
 
 interface Position {
-  id: number
-  title: string
-  candidates: Candidate[]
+  id: number;
+  title: string;
+  candidates: Candidate[];
 }
-
 interface Candidate {
-  id: number
-  fullName: string
-  matricNumber?: string
-  imageUrl?: string
+  id: number;
+  fullName: string;
+  matricNumber?: string;
+  imageUrl?: string;
 }
-
 interface VoteResults {
   [positionId: number]: {
-    [candidateId: number]: number
-  }
+    [candidateId: number]: number;
+  };
 }
 
 export function ResultsViewer() {
-  const { data: session } = useSession()
-  const [positions, setPositions] = useState<Position[]>([])
-  const [results, setResults] = useState<VoteResults>({})
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: session } = useSession();
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [results, setResults] = useState<VoteResults>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchResults()
-  }, [])
+    if (session) fetchResults();
+  }, [session]);
 
   const fetchResults = async () => {
+    setIsLoading(true);
     try {
       const [positionsResponse, resultsResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/positions`, {
-          headers: { 'Authorization': `Bearer ${session?.accessToken}` },
+          headers: { Authorization: `Bearer ${session?.accessToken}` },
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/results`, {
-          headers: { 'Authorization': `Bearer ${session?.accessToken}` },
-        })
-      ])
-
-      if (positionsResponse.ok) {
-        const positionsData = await positionsResponse.json()
-        setPositions(positionsData)
-      }
-
-      if (resultsResponse.ok) {
-        const resultsData = await resultsResponse.json()
-        setResults(resultsData)
-      }
+          headers: { Authorization: `Bearer ${session?.accessToken}` },
+        }),
+      ]);
+      if (positionsResponse.ok) setPositions(await positionsResponse.json());
+      if (resultsResponse.ok) setResults(await resultsResponse.json());
     } catch (error) {
-      toast.error('Failed to fetch results')
+      toast.error("Failed to fetch results");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const getTotalVotes = (positionId: number): number => {
-    const positionResults = results[positionId] || {}
-    return Object.values(positionResults).reduce((sum, votes) => sum + votes, 0)
-  }
+  const getTotalVotesForPosition = (positionId: number): number => {
+    return Object.values(results[positionId] || {}).reduce(
+      (sum, votes) => sum + votes,
+      0
+    );
+  };
 
-  const getCandidateVotes = (candidateId: number, positionId: number): number => {
-    return results[positionId]?.[candidateId] || 0
-  }
+  const getOverallTotalVotes = (): number => {
+    return Object.values(results).reduce((total, positionResults) => {
+      return (
+        total +
+        Object.values(positionResults).reduce((sum: number, votes) => sum + votes, 0)
+      );
+    }, 0);
+  };
 
-  const getVotePercentage = (candidateId: number, positionId: number): number => {
-    const candidateVotes = getCandidateVotes(candidateId, positionId)
-    const totalVotes = getTotalVotes(positionId)
-    return totalVotes > 0 ? (candidateVotes / totalVotes) * 100 : 0
-  }
-
-  const getWinner = (positionId: number): Candidate | null => {
-    const position = positions.find(p => p.id === positionId)
-    if (!position) return null
-
-    let winner = null
-    let maxVotes = 0
-
-    position.candidates.forEach(candidate => {
-      const votes = getCandidateVotes(candidate.id, positionId)
-      if (votes > maxVotes) {
-        maxVotes = votes
-        winner = candidate
-      }
-    })
-
-    return winner
-  }
+  const getWinner = (position: Position): Candidate | null => {
+    if (!position.candidates || position.candidates.length === 0) return null;
+    return position.candidates.reduce((winner, candidate) => {
+      const winnerVotes = results[position.id]?.[winner.id] || 0;
+      const candidateVotes = results[position.id]?.[candidate.id] || 0;
+      return candidateVotes > winnerVotes ? candidate : winner;
+    }, position.candidates[0]);
+  };
 
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <LoadingSpinner />
       </div>
-    )
+    );
   }
 
+  const overallTotalVotes = getOverallTotalVotes();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Vote Results</h2>
-        <button
-          onClick={fetchResults}
-          className="btn btn-secondary"
-        >
+        <h1 className="text-3xl font-bold text-neutral-800">
+          Election Results
+        </h1>
+        <Button onClick={fetchResults} variant="secondary">
           Refresh Results
-        </button>
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg border border-neutral-200">
+          <h3 className="text-sm font-medium text-neutral-500">
+            Total Positions
+          </h3>
+          <p className="text-3xl font-bold text-primary-dark mt-1">
+            {positions.length}
+          </p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border border-neutral-200">
+          <h3 className="text-sm font-medium text-neutral-500">
+            Total Votes Cast
+          </h3>
+          <p className="text-3xl font-bold text-primary-dark mt-1">
+            {overallTotalVotes}
+          </p>
+        </div>
       </div>
 
       {positions.length === 0 ? (
-        <div className="card text-center">
-          <p className="text-gray-600">No positions available.</p>
+        <div className="bg-white border border-neutral-200 rounded-lg p-12 text-center">
+          <h3 className="font-semibold text-neutral-800">
+            No Positions Available
+          </h3>
+          <p className="text-neutral-500 mt-1">
+            Results will be shown here once positions are created.
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
           {positions.map((position) => {
-            const totalVotes = getTotalVotes(position.id)
-            const winner = getWinner(position.id)
+            const totalPositionVotes = getTotalVotesForPosition(position.id);
+            const winner = totalPositionVotes > 0 ? getWinner(position) : null;
 
             return (
-              <div key={position.id} className="card">
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <div
+                key={position.id}
+                className="bg-white border border-neutral-200 rounded-lg"
+              >
+                <div className="p-6 border-b border-neutral-200">
+                  <h3 className="text-xl font-bold text-neutral-800">
                     {position.title}
                   </h3>
-                  <p className="text-gray-600">
-                    Total Votes: {totalVotes}
+                  <p className="text-neutral-500">
+                    Total Votes: {totalPositionVotes}
                   </p>
-                  {winner && totalVotes > 0 && (
-                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-green-800 font-medium">
-                        🏆 Winner: {winner.fullName} ({getCandidateVotes(winner.id, position.id)} votes)
-                      </p>
-                    </div>
-                  )}
                 </div>
 
-                <div className="space-y-4">
-                  {position.candidates.map((candidate) => {
-                    const votes = getCandidateVotes(candidate.id, position.id)
-                    const percentage = getVotePercentage(candidate.id, position.id)
-                    const isWinner = winner?.id === candidate.id && totalVotes > 0
+                {winner && (
+                  <div className="p-4 bg-success/10 border-b border-neutral-200">
+                    <p className="font-semibold text-success flex items-center">
+                      <span className="text-xl mr-2">🏆</span>
+                      Winner: {winner.fullName} (
+                      {results[position.id]?.[winner.id] || 0} votes)
+                    </p>
+                  </div>
+                )}
 
-                    return (
-                      <div
-                        key={candidate.id}
-                        className={`border rounded-lg p-4 ${
-                          isWinner ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-3">
-                            {candidate.imageUrl && (
+                <div className="space-y-4 p-6">
+                  {position.candidates.length > 0 ? (
+                    position.candidates.map((candidate) => {
+                      const votes = results[position.id]?.[candidate.id] || 0;
+                      const percentage =
+                        totalPositionVotes > 0
+                          ? (votes / totalPositionVotes) * 100
+                          : 0;
+                      const isWinner = winner?.id === candidate.id;
+
+                      return (
+                        <div key={candidate.id}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center space-x-3">
                               <img
-                                src={candidate.imageUrl}
+                                src={
+                                  candidate.imageUrl || "/default-avatar.png"
+                                }
                                 alt={candidate.fullName}
-                                className="w-10 h-10 rounded-full object-cover"
+                                className="w-8 h-8 rounded-full object-cover"
                               />
-                            )}
-                            <div>
-                              <h4 className="font-semibold text-gray-900">
+                              <h4
+                                className={`font-semibold ${
+                                  isWinner ? "text-success" : "text-neutral-800"
+                                }`}
+                              >
                                 {candidate.fullName}
-                                {isWinner && <span className="ml-2 text-green-600">👑</span>}
                               </h4>
-                              {candidate.matricNumber && (
-                                <p className="text-sm text-gray-600">
-                                  {candidate.matricNumber}
-                                </p>
-                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-sm text-neutral-700">
+                                {votes} votes
+                              </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-lg">{votes}</p>
-                            <p className="text-sm text-gray-600">
-                              {percentage.toFixed(1)}%
-                            </p>
+                          <div className="w-full bg-neutral-200 rounded-full h-2.5">
+                            <div
+                              className={`h-2.5 rounded-full transition-all duration-500 ${
+                                isWinner ? "bg-success" : "bg-primary"
+                              }`}
+                              style={{ width: `${percentage}%` }}
+                            />
                           </div>
                         </div>
-                        
-                        {/* Vote Progress Bar */}
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              isWinner ? 'bg-green-500' : 'bg-primary-500'
-                            }`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
+                      );
+                    })
+                  ) : (
+                    <p className="text-neutral-500 text-center py-4">
+                      No candidates for this position.
+                    </p>
+                  )}
                 </div>
-
-                {position.candidates.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">
-                    No candidates for this position.
-                  </p>
-                )}
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }
