@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react"; 
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../ui/loading-spinner";
 import { Button } from "../ui/button";
+
 interface FaceCaptureProps {
   matricNumber: string;
   onSuccess: () => void;
@@ -19,46 +20,74 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const startCamera = useCallback(async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-      setIsCapturing(true);
-    } catch (error) {
-      toast.error("Failed to access camera. Please allow camera permissions.");
-    }
-  }, []);
 
-  const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
+  useEffect(() => {
+    const enableStream = async () => {
+      if (isCapturing) {
+        try {
+          const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+          });
+          setStream(mediaStream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = mediaStream;
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current?.play();
+            };
+          }
+        } catch (error) {
+          toast.error(
+            "Failed to access camera. Please allow camera permissions."
+          );
+          setIsCapturing(false); 
+        }
+      }
+    };
+
+    enableStream();
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
+      }
+    };
+  }, [isCapturing]);
+
+  const startCamera = () => {
+    setCapturedImage(null);
+    setIsCapturing(true);
+  };
+
+  const stopCamera = () => {
     setIsCapturing(false);
-  }, [stream]);
+  };
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
+
     const canvas = canvasRef.current;
     const video = videoRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      toast.error("Camera feed is not available. Please try again.");
+      return;
+    }
+
     const context = canvas.getContext("2d");
     if (context) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0);
+      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       const imageData = canvas.toDataURL("image/jpeg", 0.8);
       setCapturedImage(imageData);
-      stopCamera();
+      stopCamera(); 
     }
-  }, [stopCamera]);
+  }, [videoRef, canvasRef]);
 
   const retakePhoto = () => {
-    setCapturedImage(null);
     startCamera();
   };
 
@@ -98,7 +127,6 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
       setIsVerifying(false);
     }
   };
-  // --- END OF LOGIC ---
 
   return (
     <div>
@@ -115,7 +143,6 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
           </ul>
         </div>
       </div>
-
       <div className="flex flex-col items-center space-y-6">
         {!isCapturing && !capturedImage && (
           <div className="text-center space-y-4">
@@ -145,7 +172,6 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
             </Button>
           </div>
         )}
-
         {isCapturing && (
           <div className="text-center">
             <div className="relative w-80 h-60">
@@ -153,6 +179,7 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
                 ref={videoRef}
                 autoPlay
                 playsInline
+                muted
                 className="w-full h-full bg-neutral-900 rounded-lg object-cover"
               />
               <div className="absolute inset-0 border-4 border-primary rounded-lg pointer-events-none" />
@@ -165,7 +192,6 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
             </div>
           </div>
         )}
-
         {capturedImage && (
           <div className="text-center">
             <div className="relative w-80 h-60">
@@ -196,7 +222,6 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
             </div>
           </div>
         )}
-
         <canvas ref={canvasRef} className="hidden" />
       </div>
     </div>

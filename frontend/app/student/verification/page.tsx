@@ -168,16 +168,35 @@ export default function VerificationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="bg-white shadow-sm border-b border-neutral-200">
+    <div className="min-h-screen bg-neutral-100">
+      <header className="sticky top-0 bg-primary-dark shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-primary-dark">
-              LASU E-Voting
-            </h1>
+            {/* 1. Branded Title */}
+            <div className="flex items-center space-x-3">
+              {/* A simple book icon, now in white */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
+              </svg>
+              <h1 className="text-xl font-bold text-white">LASU E-Voting</h1>
+            </div>
+
+            {/* 2. Styled Sign Out Button for Dark Background */}
             <Button
               onClick={() => signOut({ callbackUrl: "/" })}
-              variant="secondary"
+              variant="danger"
+              className="text-white border-2 border-white/50 hover:bg-white/20 hover:border-white"
               size="sm"
             >
               Sign Out
