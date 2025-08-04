@@ -32,14 +32,53 @@ export default function StudentDashboard() {
   const [votingActive, setVotingActive] = useState(false);
 
   useEffect(() => {
-    if (session?.user && !session.user.isActivated) {
-      router.push("/student/verification");
-      return;
+    const checkVerificationStatus = async () => {
+      try {
+        console.log("Session in checkVerificationStatus:", session);
+  
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Student/verification-status`, {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        });
+  
+        console.log("Raw response status:", res.status);
+  
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("Verification API error:", text);
+          router.push("/student/verification");
+          return;
+        }
+  
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          console.error("Expected JSON but got:", contentType, text);
+          router.push("/student/verification");
+          return;
+        }
+  
+        const data = await res.json();
+        console.log("Verification status:", data);
+  
+        if (data.isActivated) {
+          setIsLoading(false);
+        } else {
+          router.push("/student/verification");
+        }
+      } catch (err) {
+        console.error("Failed to check verification status:", err);
+        router.push("/student/verification");
+      }
+    };
+  
+    if (session?.user) {
+      checkVerificationStatus();
     }
-    if (session) {
-      fetchVotingData();
-    }
-  }, [session, router]);
+  }, [session, router]);  
+  
+  
 
   const fetchVotingData = async () => {
     setIsLoading(true);

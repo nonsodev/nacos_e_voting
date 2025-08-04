@@ -37,6 +37,7 @@ export default function VerificationPage() {
       router.push("/student/dashboard");
     }, 2000);
   };
+  
 
   const steps = [
     { key: "matric", label: "Your Details" },
