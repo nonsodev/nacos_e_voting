@@ -4,9 +4,8 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../ui/loading-spinner";
-import { Button } from "../ui/button"; // <-- 1. IMPORT OUR BUTTON COMPONENT
+import { Button } from "../ui/button";
 
-// --- INTERFACES & LOGIC ARE UNCHANGED ---
 interface Position {
   id: number;
   title: string;
@@ -15,6 +14,7 @@ interface Position {
   hasVoted: boolean;
   candidates: Candidate[];
 }
+
 interface Candidate {
   id: number;
   fullName: string;
@@ -22,22 +22,16 @@ interface Candidate {
   nickName?: string;
   imageUrl?: string;
 }
+
 interface VotingInterfaceProps {
   positions: Position[];
   onVoteCast: () => void;
 }
 
-export function VotingInterface({
-  positions,
-  onVoteCast,
-}: VotingInterfaceProps) {
+export function VotingInterface({ positions, onVoteCast }: VotingInterfaceProps) {
   const { data: session } = useSession();
-  const [selectedCandidates, setSelectedCandidates] = useState<
-    Record<number, number>
-  >({});
-  const [votingInProgress, setVotingInProgress] = useState<
-    Record<number, boolean>
-  >({});
+  const [selectedCandidates, setSelectedCandidates] = useState<Record<number, number>>({});
+  const [votingInProgress, setVotingInProgress] = useState<Record<number, boolean>>({});
 
   const handleCandidateSelect = (positionId: number, candidateId: number) => {
     setSelectedCandidates((prev) => ({ ...prev, [positionId]: candidateId }));
@@ -51,17 +45,15 @@ export function VotingInterface({
     }
     setVotingInProgress((prev) => ({ ...prev, [positionId]: true }));
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/voting/cast-vote`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.accessToken}`,
-          },
-          body: JSON.stringify({ positionId, candidateId }),
-        }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voting/cast-vote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+        body: JSON.stringify({ positionId, candidateId }),
+      });
+
       if (response.ok) {
         toast.success("Vote cast successfully!");
         onVoteCast();
@@ -75,131 +67,78 @@ export function VotingInterface({
       setVotingInProgress((prev) => ({ ...prev, [positionId]: false }));
     }
   };
-  // --- END OF LOGIC ---
 
   if (positions.length === 0) {
     return (
       <div className="bg-white border border-neutral-200 rounded-lg p-8 text-center">
-        <h2 className="text-xl font-semibold text-neutral-800 mb-2">
-          No Positions Available
-        </h2>
-        <p className="text-neutral-500">
-          There are no positions available for voting at this time.
-        </p>
+        <h2 className="text-xl font-semibold text-neutral-800 mb-2">No Positions Available</h2>
+        <p className="text-neutral-500">There are no positions available for voting at this time.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-12">
-      {/* Change 1: Updated main title colors */}
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-primary-dark mb-2">
-          Cast Your Vote
-        </h1>
-        <p className="text-lg text-neutral-600">
-          Select your preferred candidate for each position
-        </p>
+        <h1 className="text-4xl font-bold text-purple-800 mb-2">Cast Your Vote</h1>
+        <p className="text-lg text-neutral-600">Select your preferred candidate for each position</p>
       </div>
 
       {positions.map((position) => (
-        // Change 2: Wrapped each position in a consistent, styled card
         <div
           key={position.id}
-          className="bg-white rounded-xl shadow-md border border-neutral-200 p-6 md:p-8"
+          className="bg-purple-50 rounded-xl shadow-md border border-purple-200 p-6 space-y-6"
         >
-          <div className="mb-6">
-            <h3 className="text-2xl font-bold text-neutral-800">
-              {position.title}
-            </h3>
-            {position.description && (
-              <p className="text-neutral-500 mt-1">{position.description}</p>
-            )}
+          <div className="text-center">
+            <h3 className="text-2xl font-bold text-purple-800 uppercase">{position.title}</h3>
           </div>
 
           {position.hasVoted ? (
-            // Change 3: Restyled the "voted" banner with our success colors
-            <div className="bg-success/10 border border-success/30 rounded-lg p-4">
-              <div className="flex items-center">
-                <svg
-                  className="w-5 h-5 text-success mr-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                <span className="text-success font-semibold">
-                  You have already voted for this position
-                </span>
-              </div>
+            <div className="bg-green-100 text-green-700 border border-green-300 rounded p-4 text-center font-semibold">
+              You have already voted for this position
             </div>
           ) : (
-            <>
-              {/* Change 4: Redesigned the candidate selection grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                {position.candidates.map((candidate) => (
+            <div className="space-y-8">
+              {position.candidates.sort((a, b) => a.id - b.id).map((candidate) => {
+                const isSelected = selectedCandidates[position.id] === candidate.id;
+                return (
                   <div
                     key={candidate.id}
-                    className={`rounded-lg p-4 cursor-pointer transition-all duration-200 border-2 ${
-                      selectedCandidates[position.id] === candidate.id
-                        ? "border-primary bg-primary/10" // Selected state
-                        : "border-neutral-200 bg-white hover:border-primary/50" // Default state
+                    onClick={() => handleCandidateSelect(position.id, candidate.id)}
+                    className={`rounded-lg p-4 border-2 cursor-pointer transition-all duration-200 text-center ${
+                      isSelected ? "border-purple-600 bg-purple-100" : "border-purple-200 hover:border-purple-400"
                     }`}
-                    onClick={() =>
-                      handleCandidateSelect(position.id, candidate.id)
-                    }
                   >
-                    <div className="flex items-center">
+                    {candidate.imageUrl && (
+                      <img
+                        src={candidate.imageUrl}
+                        alt={candidate.fullName}
+                        className="w-32 h-32 object-cover rounded-full mx-auto mb-4 border border-purple-300"
+                      />
+                    )}
+                    <p className="text-md font-medium text-purple-900">
+                      NAME: {candidate.fullName.trim().toUpperCase()}
+                    </p>
+                    <label className="inline-flex items-center mt-4 space-x-2 text-purple-800 font-semibold">
                       <input
                         type="radio"
-                        name={`position-${position.id}`}
-                        checked={
-                          selectedCandidates[position.id] === candidate.id
-                        }
-                        onChange={() =>
-                          handleCandidateSelect(position.id, candidate.id)
-                        }
-                        className="h-5 w-5 mr-4 accent-primary" // Styled the radio button
+                        checked={isSelected}
+                        onChange={() => handleCandidateSelect(position.id, candidate.id)}
+                        className="form-radio h-5 w-5 text-purple-600"
                       />
-                      <div className="flex-1 flex items-center">
-                        {candidate.imageUrl && (
-                          <img
-                            src={candidate.imageUrl}
-                            alt={candidate.fullName}
-                            className="w-12 h-12 rounded-full object-cover mr-4"
-                          />
-                        )}
-                        <div>
-                          <h4 className="font-semibold text-neutral-800">
-                            {candidate.fullName}
-                          </h4>
-                          {candidate.nickName && (
-                            <p className="text-sm text-neutral-500">
-                              {candidate.nickName}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      <span>
+                        VOTE {candidate.nickName?.toUpperCase() || candidate.fullName.split(" ")[0].toUpperCase()} FOR {position.title.toUpperCase()}
+                      </span>
+                    </label>
                   </div>
-                ))}
-              </div>
+                );
+              })}
 
-              {/* Change 5: Used our Button for the final action */}
-              <div className="flex justify-end border-t border-neutral-200 pt-6">
+              <div className="flex justify-center">
                 <Button
                   onClick={() => handleVote(position.id)}
-                  disabled={
-                    !selectedCandidates[position.id] ||
-                    votingInProgress[position.id]
-                  }
-                  size="lg"
+                  disabled={!selectedCandidates[position.id] || votingInProgress[position.id]}
+                  className="bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded-lg text-lg"
                 >
                   {votingInProgress[position.id] ? (
                     <>
@@ -207,11 +146,11 @@ export function VotingInterface({
                       Casting Vote...
                     </>
                   ) : (
-                    "Cast Vote for this Position"
+                    "Cast Vote"
                   )}
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </div>
       ))}

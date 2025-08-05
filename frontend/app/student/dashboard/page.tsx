@@ -64,6 +64,7 @@ export default function StudentDashboard() {
   
         if (data.isActivated) {
           setIsLoading(false);
+          fetchVotingData();
         } else {
           router.push("/student/verification");
         }
