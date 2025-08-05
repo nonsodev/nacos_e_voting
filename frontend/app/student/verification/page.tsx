@@ -37,7 +37,6 @@ export default function VerificationPage() {
       router.push("/student/dashboard");
     }, 2000);
   };
-  
 
   const steps = [
     { key: "matric", label: "Your Details" },
@@ -101,41 +100,41 @@ export default function VerificationPage() {
             </form>
           </>
         );
-        case "document":
-          return (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mb-4"
-                onClick={() => setCurrentStep("matric")}
-              >
-                ← Edit Name or Matric Number
-              </Button>
-              <DocumentUpload
-                matricNumber={matricNumber}
-                fullName={fullName}
-                onSuccess={handleDocumentUploaded}
-              />
-            </>
-          );        
-          case "face":
-            return (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mb-4"
-                  onClick={() => setCurrentStep("matric")}
-                >
-                  ← Edit Name or Matric Number
-                </Button>
-                <FaceCapture
-                  matricNumber={matricNumber}
-                  onSuccess={handleFaceVerified}
-                />
-              </>
-            );          
+      case "document":
+        return (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-4"
+              onClick={() => setCurrentStep("matric")}
+            >
+              ← Edit Name or Matric Number
+            </Button>
+            <DocumentUpload
+              matricNumber={matricNumber}
+              fullName={fullName}
+              onSuccess={handleDocumentUploaded}
+            />
+          </>
+        );
+      case "face":
+        return (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-4"
+              onClick={() => setCurrentStep("matric")}
+            >
+              ← Edit Name or Matric Number
+            </Button>
+            <FaceCapture
+              matricNumber={matricNumber}
+              onSuccess={handleFaceVerified}
+            />
+          </>
+        );
       case "complete":
         return (
           <div className="text-center py-8">
@@ -173,9 +172,7 @@ export default function VerificationPage() {
       <header className="sticky top-0 bg-primary-dark shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* 1. Branded Title */}
             <div className="flex items-center space-x-3">
-              {/* A simple book icon, now in white */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-6 w-6 text-white"
@@ -192,13 +189,11 @@ export default function VerificationPage() {
               </svg>
               <h1 className="text-xl font-bold text-white">LASU E-Voting</h1>
             </div>
-
-            {/* 2. Styled Sign Out Button for Dark Background */}
             <Button
               onClick={() => signOut({ callbackUrl: "/" })}
-              variant="danger"
-              className="text-white border-2 border-white/50 hover:bg-white/20 hover:border-white"
+              variant="ghost"
               size="sm"
+              className="text-white/70 border-2 border-white/30 transition-all hover:bg-danger hover:text-white hover:border-danger"
             >
               Sign Out
             </Button>
@@ -216,55 +211,70 @@ export default function VerificationPage() {
           </p>
         </div>
 
-        <div className="mb-8 p-4 bg-white border border-neutral-200 rounded-lg">
-          <ol className="flex items-center w-full">
+        {/* --- THIS IS THE NEW, IMPROVED STEPPER UI --- */}
+        <div className="w-full mb-12 px-2">
+          <div className="flex">
             {steps.map((step, index) => (
-              <li
-                key={step.key}
-                className={`flex w-full items-center ${
-                  index < steps.length - 1
-                    ? "after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block"
-                    : ""
-                } ${
-                  index <= currentStepIndex
-                    ? "after:border-primary"
-                    : "after:border-neutral-200"
-                }`}
-              >
+              <div key={step.key} className="w-1/3">
                 <div
-                  className="flex items-center justify-center w-10 h-10 rounded-full lg:h-12 lg:w-12 shrink-0"
-                  style={{
-                    backgroundColor:
-                      index <= currentStepIndex
-                        ? "var(--color-primary)"
-                        : "var(--color-neutral-200)",
-                    color:
-                      index <= currentStepIndex
-                        ? "white"
-                        : "var(--color-neutral-600)",
-                  }}
+                  className={`relative mb-2 ${
+                    index <= currentStepIndex
+                      ? "text-primary-dark"
+                      : "text-neutral-500"
+                  }`}
                 >
-                  {index < currentStepIndex ? (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={3}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  ) : (
-                    <span>{index + 1}</span>
+                  {/* The connector line. It doesn't show for the first item. */}
+                  {index > 0 && (
+                    <div
+                      className="absolute w-full top-1/2 -mt-px h-1"
+                      style={{
+                        left: "-50%",
+                        backgroundColor:
+                          index <= currentStepIndex
+                            ? "#8B5CF6" /* Purple */
+                            : "#e0e0e0" /* Gray */,
+                      }}
+                    />
                   )}
+
+                  <div
+                    className={`w-10 h-10 mx-auto rounded-full text-lg flex items-center justify-center relative z-10 ${
+                      index <= currentStepIndex
+                        ? "bg-primary text-white"
+                        : "bg-neutral-200 text-neutral-600"
+                    }`}
+                  >
+                    {index < currentStepIndex ? (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    ) : (
+                      <span>{index + 1}</span>
+                    )}
+                  </div>
                 </div>
-              </li>
+                <div
+                  className={`text-center text-xs md:text-sm font-semibold ${
+                    index <= currentStepIndex
+                      ? "text-primary-dark"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  {step.label}
+                </div>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
 
         <div className="bg-white border border-neutral-200 rounded-lg p-6 md:p-8">
