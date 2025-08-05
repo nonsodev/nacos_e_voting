@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../ui/loading-spinner";
 import { Button } from "../ui/button";
+import { apiClient } from "@/lib/apiClient";
 
 interface Position {
   id: number;
@@ -49,14 +50,14 @@ export function VotingInterface({ positions, onVoteCast }: VotingInterfaceProps)
     setVotingInProgress((prev) => ({ ...prev, [positionId]: true }));
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/voting/cast-vote`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
-        },
-        body: JSON.stringify({ positionId, candidateId }),
-      });
+      const response = await apiClient(
+        `${process.env.NEXT_PUBLIC_API_URL}/voting/cast-vote`,
+        session?.accessToken,
+        {
+          method: "POST",
+          body: JSON.stringify({ positionId, candidateId }),
+        }
+      );
 
       if (response.ok) {
         toast.success("Vote cast successfully!");

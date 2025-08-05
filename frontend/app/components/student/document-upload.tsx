@@ -4,7 +4,8 @@ import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../ui/loading-spinner";
-import { Button } from "../ui/button"; 
+import { Button } from "../ui/button";
+import { apiClient } from "@/lib/apiClient";
 
 interface DocumentUploadProps {
   matricNumber: string;
@@ -36,6 +37,7 @@ export function DocumentUpload({
     setUploadedFile(file);
   };
 
+
   const handleUpload = async () => {
     if (!uploadedFile) {
       toast.error("Please select a file first");
@@ -48,16 +50,16 @@ export function DocumentUpload({
       formData.append("matricNumber", matricNumber);
       formData.append("fullName", fullName);
 
-      const response = await fetch(
+
+      const response = await apiClient(
         `${process.env.NEXT_PUBLIC_API_URL}/student/upload-document`,
+        session?.accessToken,
         {
           method: "PUT",
-          headers: {
-            Authorization: `Bearer ${session?.accessToken}`,
-          },
           body: formData,
         }
       );
+
       if (response.ok) {
         toast.success("Document verified successfully!");
         onSuccess();
@@ -66,12 +68,15 @@ export function DocumentUpload({
         toast.error(error.message || "Upload failed");
       }
     } catch (error) {
-      toast.error("An error occurred during upload");
+      if ((error as Error).message !== "Session expired") {
+        toast.error("An error occurred during upload");
+      }
     } finally {
       setIsUploading(false);
     }
   };
 
+  // --- UI is unchanged ---
   return (
     <div>
       <div className="mb-6">
@@ -87,7 +92,6 @@ export function DocumentUpload({
           </ul>
         </div>
       </div>
-
       <div
         className="relative border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center mb-6 transition-colors duration-200 hover:border-primary hover:bg-neutral-50 cursor-pointer"
         onClick={() => fileInputRef.current?.click()}
@@ -99,7 +103,6 @@ export function DocumentUpload({
           onChange={handleFileSelect}
           className="hidden"
         />
-
         {uploadedFile ? (
           <div className="space-y-3">
             <div className="w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mx-auto">
@@ -160,7 +163,6 @@ export function DocumentUpload({
           </div>
         )}
       </div>
-
       {uploadedFile && (
         <div className="flex justify-end">
           <Button onClick={handleUpload} disabled={isUploading} size="lg">

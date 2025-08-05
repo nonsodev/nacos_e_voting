@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../ui/loading-spinner";
 import { Button } from "../ui/button";
+import { apiClient } from "@/lib/apiClient"; 
 
 interface FaceCaptureProps {
   matricNumber: string;
@@ -103,11 +104,11 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
       const formData = new FormData();
       formData.append("File", blob, "face.jpg");
       formData.append("matricNumber", matricNumber);
-      const verifyResponse = await fetch(
+      const verifyResponse = await apiClient(
         `${process.env.NEXT_PUBLIC_API_URL}/student/verify-face`,
+        session?.accessToken,
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${session?.accessToken}` },
           body: formData,
         }
       );
