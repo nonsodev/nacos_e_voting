@@ -124,6 +124,7 @@ export default function StudentDashboard() {
       </div>
     );
   }
+  console.log("Positions right before VotingInterface:", positions.map(p => p.title));
 
   return (
     <div className="min-h-screen bg-neutral-50">

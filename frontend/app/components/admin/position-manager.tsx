@@ -48,7 +48,9 @@ export function PositionManager() {
         }
       );
       if (response.ok) {
-        setPositions(await response.json());
+        const data = await response.json();
+        console.log("Fetched positions order:", data.map((p: Position) => p.title));
+        setPositions(data);      
       } else {
         toast.error("Failed to fetch positions");
       }
