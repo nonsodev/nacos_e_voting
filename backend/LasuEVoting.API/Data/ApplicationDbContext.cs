@@ -109,17 +109,6 @@ namespace LasuEVoting.API.Data
                     IsAdmin = true,
                     IsActivated = true,
                     CreatedAt = DateTime.UtcNow
-                },
-                new User
-                {
-                    Id = 2,
-                    Email = "oyebohm@gmail.com",
-                    MatricNumber = "230591247",
-                    FullName = "System Administrator",
-                    GoogleId = "102222353370985427662",
-                    IsAdmin = true,
-                    IsActivated = true,
-                    CreatedAt = DateTime.UtcNow
                 }
             );
         }
