@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "NACOS LASU E-Voting System",
+  title: "NACOS E-Voting System",
   description: "Secure student voting platform for Lagos State University, Department of Computer Science",
 };
 

@@ -5,16 +5,16 @@ using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using LasuEVoting.API.Models;
 using System.Text;
+using LasuEVoting.API.Services.Interfaces;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Implementation
 {
     public class DocumentService : IDocumentService
     {
         private readonly Cloudinary _cloudinary;
         private readonly ILogger<DocumentService> _logger;
-        private readonly GeminiClient _geminiClient;
 
-        public DocumentService(IOptions<CloudinarySettings> cloudinarySettings, ILogger<DocumentService> logger,GeminiClient geminiClient )
+        public DocumentService(IOptions<CloudinarySettings> cloudinarySettings, ILogger<DocumentService> logger )
         {
             var account = new Account(
                 cloudinarySettings.Value.CloudName,
@@ -23,14 +23,12 @@ namespace LasuEVoting.API.Services
             );
             _cloudinary = new Cloudinary(account);
             _logger = logger;
-            _geminiClient = geminiClient;
         }
 
         public async Task<(bool verified, string? documentUrl)> VerifyAndUploadDocumentAsync(IFormFile document, string matricNumber, string fullName)
         {
             try
             {
-                // Validate file
                 if (document == null || document.Length == 0)
                     return (false, null);
 
@@ -232,25 +230,18 @@ namespace LasuEVoting.API.Services
                 var containsMatricNumber = extractedText.Contains(matricNumber, StringComparison.OrdinalIgnoreCase);
                 var containsFullName = ContainsFullName(extractedText, fullName);
 
-                if (containsMatricNumber && containsFullName)
-                {
-                    _logger.LogInformation("Text extraction succeeded. Skipping Gemini scan.");
-                    return true;
-                }
+                if (!containsMatricNumber)
+                    return false;
 
-                var geminiResponse = await _geminiClient.GenerateContentFromImageAsync(pdfBytes, fullName, matricNumber);
-                _logger.LogInformation($"Gemini response: {geminiResponse}");
+                if (!containsFullName)
+                    return false;
 
-                _logger.LogInformation($"[Gemini OCR] Response: {geminiResponse}");
+                if (!IsMatricNumberAllowed(matricNumber))
+                    return false;
 
-                if (geminiResponse.Contains("yes", StringComparison.OrdinalIgnoreCase) ||
-                    (geminiResponse.Contains(fullName, StringComparison.OrdinalIgnoreCase) &&
-                     geminiResponse.Contains(matricNumber, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        return true;
-                    }
+                _logger.LogInformation("Text extraction succeeded");
+                return true;
 
-                return false;
             }
             catch (Exception ex)
             {
@@ -259,11 +250,69 @@ namespace LasuEVoting.API.Services
             }
         }
 
+        private readonly List<string> _excludedMatricNumbers = new()
+        {
+            "21", "240591174", "251911066", "251911206", "230591151", "240591257", "220591278", "230591327", "230591364", "220591123"
+        };
+
+        private readonly List<string> _allowedTransferredMatricNumbers = new()
+        {
+            "2105","2101",
+        };
+
+        private bool IsValidDepartmentalMatricNumber(string matricNumber)
+        {
+            if (matricNumber.Length != 9)
+                return false;
+
+            var yearPart = matricNumber.Substring(0, 2);
+            var deptCode = matricNumber.Substring(2, 4);
+            var personalNumber = matricNumber.Substring(6, 3);
+
+            return int.TryParse(yearPart, out var year) &&
+                (
+                    ((year >= 22 && year <= 24) && deptCode == "0591") ||
+                    (year == 25 && deptCode == "1911")
+                ) &&
+                int.TryParse(personalNumber, out _);
+            }
+
+        private bool IsMatricNumberAllowed(string matricNumber)
+        {
+            if (_excludedMatricNumbers.Contains(matricNumber))
+                return false;
+
+            if (_allowedTransferredMatricNumbers.Contains(matricNumber))
+                return true;
+
+            if (!IsValidDepartmentalMatricNumber(matricNumber))
+                return false;
+
+            return IsCurrentMatricNumber(matricNumber);
+        }
+
+
+        private bool IsCurrentMatricNumber(string matricNumber)
+        {
+            if (matricNumber.Length < 9) return false;
+
+            var yearPart = matricNumber.Substring(0, 2);
+
+            if (int.TryParse(yearPart, out int year))
+            {
+                return year >= 22 && year <= 25;
+            }
+
+            return false;
+        }
+
 
         private string ExtractTextFromPdf(byte[] pdfBytes)
         {
             try
             {
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
                 using var reader = new PdfReader(pdfBytes);
                 var text = new StringBuilder();
 
@@ -294,20 +343,20 @@ namespace LasuEVoting.API.Services
                                     .ToArray();
 
             bool allPartsPresent = nameParts.All(part => normalizedText.Contains(part));
-
             if (!allPartsPresent)
                 return false;
 
             var permutations = GetPermutations(nameParts);
             foreach (var permutation in permutations)
             {
-                var combined = string.Join(" ", permutation);
+                var combined = Normalize(string.Join(" ", permutation));
                 if (normalizedText.Contains(combined))
                     return true;
             }
 
             return true;
         }
+
 
 
         private string Normalize(string input)
@@ -341,30 +390,6 @@ namespace LasuEVoting.API.Services
                 Permute(array, start + 1, result);
                 (array[start], array[i]) = (array[i], array[start]);
             }
-        }
-
-
-        private IEnumerable<IEnumerable<string>> Permute(string[] parts, int l, int r)
-        {
-            if (l == r)
-                yield return parts.ToArray();
-            else
-            {
-                for (int i = l; i <= r; i++)
-                {
-                    Swap(parts, l, i);
-                    foreach (var perm in Permute(parts, l + 1, r))
-                        yield return perm;
-                    Swap(parts, l, i);
-                }
-            }
-        }
-
-        private void Swap(string[] array, int i, int j)
-        {
-            var temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
         }
 
 

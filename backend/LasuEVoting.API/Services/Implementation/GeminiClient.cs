@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Implementation
 {
     public class GeminiClient
     {

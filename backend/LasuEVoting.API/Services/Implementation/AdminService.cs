@@ -2,8 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using LasuEVoting.API.Data;
 using LasuEVoting.API.Models;
 using Microsoft.Extensions.Logging;
+using LasuEVoting.API.Services.Interfaces;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Implementation
 {
     public class AdminService : IAdminService
     {
@@ -143,29 +144,46 @@ namespace LasuEVoting.API.Services
 
         public async Task<IEnumerable<object>> GetAllPositionsAsync()
         {
+            var customOrder = new List<string>
+            {
+                "Vice President",
+                "Social Director",
+                "Sport Director",
+                "Public Relations Officer"
+            };
+
             var positions = await _context.Positions
                 .Include(p => p.Candidates)
-                .OrderBy(p => p.Title)
-                .ToListAsync(); // Still async here
+                .ToListAsync();
 
-            var data = positions.Select(p => new
-            {
-                p.Id,
-                p.Title,
-                p.MaxVotes,
-                Candidates = (p.Candidates ?? new List<Candidate>())
-                    .Select(c => new
-                    {
-                        c.Id,
-                        c.FullName,
-                        c.NickName,
-                        c.ImageUrl
-                    })
-                    .ToList()
-            });
+            var orderedPositions = positions
+                .OrderBy(p =>
+                {
+                    var normalizedTitle = p.Title?.Trim().ToLower() ?? "";
+                    var match = customOrder
+                        .Select((val, index) => new { val, index })
+                        .FirstOrDefault(x => normalizedTitle.Contains(x.val.ToLower()));
+                    return match?.index ?? int.MaxValue; 
+                })
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Title,
+                    p.MaxVotes,
+                    Candidates = (p.Candidates ?? new List<Candidate>())
+                        .Select(c => new
+                        {
+                            c.Id,
+                            c.FullName,
+                            c.NickName,
+                            c.ImageUrl
+                        })
+                        .ToList()
+                });
 
-            return data;
+            return orderedPositions;
         }
+
 
 
 

@@ -38,7 +38,7 @@ export default function HomePage() {
         <div className="text-center mb-8">
 
           <h1 className="text-3xl font-bold text-primary-dark mb-2">
-            NACOS LASU E-Voting
+            NACOS E-Voting
           </h1>
           <p className="text-neutral-600">
             Secure, reliable, and transparent student voting

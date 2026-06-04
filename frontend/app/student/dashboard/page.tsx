@@ -64,8 +64,14 @@ export default function StudentDashboard() {
 
         const data = await res.json();
         console.log("Verification status:", data);
+        console.log("isActivated:", data.isActivated);
+        console.log("documentVerified:", data.documentVerified);
+        console.log("hasMatricNumber:", data.hasMatricNumber);
+        console.log("faceVerified:", data.faceVerified);
 
-        if (data.isActivated) {
+        // Allow dashboard access if basic verification is complete (matric + document)
+        // Face verification will be handled in the voting interface
+        if (data.hasMatricNumber && data.documentVerified) {
           setIsLoading(false);
           fetchVotingData();
         } else {
@@ -103,6 +109,18 @@ export default function StudentDashboard() {
           );
           if (positionsResponse.ok) {
             setPositions(await positionsResponse.json());
+          } else {
+            // If positions endpoint returns 401 due to face verification requirement,
+            // still show voting interface so user can complete face verification
+            const error = await positionsResponse.json();
+            if (error.message === "Account not activated") {
+              console.log(
+                "Face verification required - showing voting interface"
+              );
+              setPositions([]); // Empty positions will trigger face verification in VotingInterface
+            } else {
+              toast.error("Failed to load positions");
+            }
           }
         }
       }
@@ -153,7 +171,7 @@ export default function StudentDashboard() {
                 />
               </svg>
               <h1 className="text-xl font-bold text-white">
-                NACOS LASU E-Voting
+                NACOS E-Voting
               </h1>
             </div>
 

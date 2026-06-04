@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using LasuEVoting.API.Services;
 using LasuEVoting.API.Data;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using LasuEVoting.API.Services.Interfaces;
 
 namespace LasuEVoting.API.Controllers
 {
@@ -19,11 +19,7 @@ namespace LasuEVoting.API.Controllers
         private readonly ApplicationDbContext _context;
         private readonly ILogger<StudentController> _logger;
 
-        public StudentController(
-            IAuthService authService,
-            IDocumentService documentService,
-            IFaceVerificationService faceVerificationService,
-            ApplicationDbContext context,
+        public StudentController(IAuthService authService,IDocumentService documentService,IFaceVerificationService faceVerificationService,ApplicationDbContext context,
             ILogger<StudentController> logger)
         {
             _authService = authService;
@@ -33,30 +29,10 @@ namespace LasuEVoting.API.Controllers
             _logger = logger;
         }
 
-        [HttpPost("update-details")]
-        public async Task<IActionResult> UpdateDetails([FromBody] UpdateDetailsRequest request)
-        {
-            try
-            {
-                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-                var success = await _authService.UpdateDetailsNumberAsync(userId, request.MatricNumber,request.FullName);
-
-                if (!success)
-                    return BadRequest(new { message = "Failed to update matric number. It may already be in use." });
-
-                return Ok(new { message = "Matric number updated successfully" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating matric number");
-                return BadRequest(new { message = "Failed to update matric number" });
-            }
-        }
-
 
         [HttpPut("upload-document")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadDocument([FromForm] UpdateDocsRequest updateDocsRequest, [FromForm] string matricNumber)
+        public async Task<IActionResult> UploadDocument([FromForm] UpdateDocsRequest updateDocsRequest)
         {
             try
             {
@@ -73,8 +49,11 @@ namespace LasuEVoting.API.Controllers
                 if (extension != ".pdf")
                     return BadRequest(new { message = "Only PDF files are allowed" });
 
-                if (string.IsNullOrWhiteSpace(matricNumber))
+                if (string.IsNullOrWhiteSpace(updateDocsRequest.MatricNumber))
                     return BadRequest(new { message = "Matric number is required" });
+
+                if (string.IsNullOrWhiteSpace(updateDocsRequest.FullName))
+                    return BadRequest(new { message = "Fullname is required" });
 
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var user = await _authService.GetUserByIdAsync(userId);
@@ -88,12 +67,12 @@ namespace LasuEVoting.API.Controllers
                 if (user.DocumentUrl == null)
                 {
                     (verified, documentUrl) = await _documentService.VerifyAndUploadDocumentAsync(
-                        updateDocsRequest.File, matricNumber, user.FullName);
+                        updateDocsRequest.File, updateDocsRequest.MatricNumber, updateDocsRequest.FullName);
                 }
                 else
                 {
                     (verified, documentUrl) = await _documentService.VerifyAndReplaceDocumentAsync(
-                        updateDocsRequest.File, user.DocumentUrl, matricNumber, user.FullName);
+                        updateDocsRequest.File, user.DocumentUrl, updateDocsRequest.MatricNumber, updateDocsRequest.FullName);
                 }
 
                 if (!verified || string.IsNullOrEmpty(documentUrl))
@@ -102,11 +81,13 @@ namespace LasuEVoting.API.Controllers
                     user.DocumentVerified = false;
                     user.UpdatedAt = DateTime.UtcNow;
                     await _context.SaveChangesAsync();
-                    return BadRequest(new { message = "Document verification failed" }); 
+                    return BadRequest(new { message = "Document does not match either matric number or fullname" }); 
                 }
                     
 
                 user.DocumentUrl = documentUrl;
+                user.FullName =  updateDocsRequest.FullName;
+                user.MatricNumber = updateDocsRequest.MatricNumber;
                 user.DocumentVerified = true;
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
@@ -128,7 +109,7 @@ namespace LasuEVoting.API.Controllers
 
 
         [HttpPost("verify-face")]
-        public async Task<IActionResult> VerifyFace([FromForm] UpdateDocsRequest faceImage)
+        public async Task<IActionResult> VerifyFace([FromForm] FaceVerificationRequest faceImage)
         {
             try
             {
@@ -210,15 +191,21 @@ namespace LasuEVoting.API.Controllers
         }
     }
 
-    public class UpdateDetailsRequest
-    {
-        public string MatricNumber { get; set; } = string.Empty;
-        public string FullName { get; set; } = string.Empty;
-    }
     public class UpdateDocsRequest
     {
         [Required]
         public IFormFile File { get; set; }
+        [Required]
+        public string MatricNumber { get; set; } = string.Empty;
+        [Required]
+        public string FullName { get; set; } = string.Empty;
     }
 
+    public class FaceVerificationRequest
+    {
+        [Required]
+        public IFormFile File { get; set; }
+        [Required]
+        public string MatricNumber { get; set; } = string.Empty;
+    }
 }

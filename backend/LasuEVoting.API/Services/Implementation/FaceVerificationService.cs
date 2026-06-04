@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Options;
 using System.Text;
 using LasuEVoting.API.Models;
+using LasuEVoting.API.Services.Interfaces;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Implementation
 {
     public class FaceVerificationService : IFaceVerificationService
     {
@@ -65,7 +66,7 @@ namespace LasuEVoting.API.Services
                 {
                     ["api_key"] = _settings.ApiKey,
                     ["api_secret"] = _settings.ApiSecret,
-                    ["urls"] = imageUrl
+                    ["urls"] = imageUrl,
                 };
 
                 var content = new FormUrlEncodedContent(parameters);
@@ -93,7 +94,8 @@ namespace LasuEVoting.API.Services
                     ["api_key"] = _settings.ApiKey,
                     ["api_secret"] = _settings.ApiSecret,
                     ["namespace"] = _settings.Namespace,
-                    ["urls"] = imageUrl
+                    ["urls"] = imageUrl,
+                    ["uids"] = "all"
                 };
 
                 var content = new FormUrlEncodedContent(parameters);
@@ -118,7 +120,7 @@ namespace LasuEVoting.API.Services
                             var confidenceStr = responseContent.Substring(confidenceStart, confidenceEnd - confidenceStart).Trim();
                             if (double.TryParse(confidenceStr, out var confidence))
                             {
-                                return confidence > 85.0; // Duplicate if confidence > 85%
+                                return confidence > 85.0; 
                             }
                         }
                     }

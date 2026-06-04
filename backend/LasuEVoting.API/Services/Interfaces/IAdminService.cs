@@ -1,7 +1,7 @@
 using LasuEVoting.API.Controllers;
 using LasuEVoting.API.Models;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Interfaces
 {
     public interface IAdminService
     {

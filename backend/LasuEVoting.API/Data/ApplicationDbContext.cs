@@ -102,13 +102,28 @@ namespace LasuEVoting.API.Data
                 new User
                 {
                     Id = 1,
-                    Email = "finestdan1979@gmail.com",
+                    CreatedAt = new DateTime(2026, 6, 4, 10, 12, 23, 36, DateTimeKind.Utc).AddTicks(1),
+                    DocumentVerified = false,
+                    Email = "adeniyiaanuoluwapo01@gmail.com",
+                    FaceVerified = false,
                     FullName = "System Administrator",
-                    MatricNumber = "210591028",
-                    GoogleId = "admin-google-id",
-                    IsAdmin = true,
+                    GoogleId = "admin-google-id-1",
                     IsActivated = true,
-                    CreatedAt = DateTime.UtcNow
+                    IsAdmin = true,
+                    MatricNumber = "220591029"
+                },
+                new User
+                {
+                    Id = 2,
+                    CreatedAt = new DateTime(2026, 6, 4, 10, 12, 23, 36, DateTimeKind.Utc).AddTicks(1),
+                    DocumentVerified = false,
+                    Email = "oyebohm@gmail.com",
+                    FaceVerified = false,
+                    FullName = "System Administrator",
+                    GoogleId = "admin-google-id-2",
+                    IsActivated = true,
+                    IsAdmin = true,
+                    MatricNumber = "210591247"
                 }
             );
         }

@@ -7,8 +7,9 @@ using LasuEVoting.API.Data;
 using LasuEVoting.API.Models;
 using System.Text.RegularExpressions;
 using CloudinaryDotNet.Actions;
+using LasuEVoting.API.Services.Interfaces;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Implementation
 {
     public class AuthService : IAuthService
     {
@@ -93,7 +94,7 @@ namespace LasuEVoting.API.Services
             if (_allowedExceptions.Contains(matricNumber))
                 return true;
 
-            return Regex.IsMatch(matricNumber, @"^\d{2}0591\d{3}$");
+            return Regex.IsMatch(matricNumber, @"^((22|23|24)0591|251911)\d{3}$");
         }
 
         public async Task<BaseResponse<UserDto>> GetCurrentUserAsync()

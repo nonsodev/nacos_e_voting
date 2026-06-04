@@ -1,6 +1,7 @@
 using LasuEVoting.API.Models;
+using LasuEVoting.API.Services.Implementation;
 
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Interfaces
 {
     public interface IAuthService
     {

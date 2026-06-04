@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { DocumentUpload } from "../../components/student/document-upload";
-import { FaceCapture } from "../../components/student/face-capture";
 import { LoadingSpinner } from "../../components/ui/loading-spinner";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 
-type VerificationStep = "matric" | "document" | "face" | "complete";
+type VerificationStep = "matric" | "document" | "complete";
 
 export default function VerificationPage() {
   const { data: session } = useSession();
@@ -29,8 +28,7 @@ export default function VerificationPage() {
     setCurrentStep("document");
   };
 
-  const handleDocumentUploaded = () => setCurrentStep("face");
-  const handleFaceVerified = () => {
+  const handleDocumentUploaded = () => {
     setCurrentStep("complete");
     toast.success("Account verification complete!");
     setTimeout(() => {
@@ -41,7 +39,6 @@ export default function VerificationPage() {
   const steps = [
     { key: "matric", label: "Your Details" },
     { key: "document", label: "Document Upload" },
-    { key: "face", label: "Face Verification" },
   ];
   const currentStepIndex = steps.findIndex((step) => step.key === currentStep);
 
@@ -118,23 +115,6 @@ export default function VerificationPage() {
             />
           </>
         );
-      case "face":
-        return (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mb-4"
-              onClick={() => setCurrentStep("matric")}
-            >
-              ← Edit Name or Matric Number
-            </Button>
-            <FaceCapture
-              matricNumber={matricNumber}
-              onSuccess={handleFaceVerified}
-            />
-          </>
-        );
       case "complete":
         return (
           <div className="text-center py-8">
@@ -187,7 +167,7 @@ export default function VerificationPage() {
                   d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                 />
               </svg>
-              <h1 className="text-xl font-bold text-white">LASU E-Voting</h1>
+              <h1 className="text-xl font-bold text-white">NACOS E-Voting</h1>
             </div>
             <Button
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -211,69 +191,71 @@ export default function VerificationPage() {
           </p>
         </div>
 
-        {/* --- THIS IS THE NEW, IMPROVED STEPPER UI --- */}
-        <div className="w-full mb-12 px-2">
-          <div className="flex">
-            {steps.map((step, index) => (
-              <div key={step.key} className="w-1/3">
-                <div
-                  className={`relative mb-2 ${
-                    index <= currentStepIndex
-                      ? "text-primary-dark"
-                      : "text-neutral-500"
-                  }`}
-                >
-                  {/* The connector line. It doesn't show for the first item. */}
-                  {index > 0 && (
-                    <div
-                      className="absolute w-full top-1/2 -mt-px h-1"
-                      style={{
-                        left: "-50%",
-                        backgroundColor:
-                          index <= currentStepIndex
-                            ? "#8B5CF6" /* Purple */
-                            : "#e0e0e0" /* Gray */,
-                      }}
-                    />
-                  )}
-
+        {/* --- CENTERED STEPPER UI --- */}
+        <div className="w-full mb-12 flex justify-center">
+          <div className="w-full max-w-md">
+            <div className="flex">
+              {steps.map((step, index) => (
+                <div key={step.key} className="flex-1">
                   <div
-                    className={`w-10 h-10 mx-auto rounded-full text-lg flex items-center justify-center relative z-10 ${
+                    className={`relative mb-2 ${
                       index <= currentStepIndex
-                        ? "bg-primary text-white"
-                        : "bg-neutral-200 text-neutral-600"
+                        ? "text-primary-dark"
+                        : "text-neutral-500"
                     }`}
                   >
-                    {index < currentStepIndex ? (
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={3}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    ) : (
-                      <span>{index + 1}</span>
+                    {/* The connector line. It doesn't show for the first item. */}
+                    {index > 0 && (
+                      <div
+                        className="absolute w-full top-1/2 -mt-px h-1"
+                        style={{
+                          left: "-50%",
+                          backgroundColor:
+                            index <= currentStepIndex
+                              ? "#8B5CF6" /* Purple */
+                              : "#e0e0e0" /* Gray */,
+                        }}
+                      />
                     )}
+
+                    <div
+                      className={`w-10 h-10 mx-auto rounded-full text-lg flex items-center justify-center relative z-10 ${
+                        index <= currentStepIndex
+                          ? "bg-primary text-white"
+                          : "bg-neutral-200 text-neutral-600"
+                      }`}
+                    >
+                      {index < currentStepIndex ? (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      ) : (
+                        <span>{index + 1}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className={`text-center text-xs md:text-sm font-semibold ${
+                      index <= currentStepIndex
+                        ? "text-primary-dark"
+                        : "text-neutral-500"
+                    }`}
+                  >
+                    {step.label}
                   </div>
                 </div>
-                <div
-                  className={`text-center text-xs md:text-sm font-semibold ${
-                    index <= currentStepIndex
-                      ? "text-primary-dark"
-                      : "text-neutral-500"
-                  }`}
-                >
-                  {step.label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 

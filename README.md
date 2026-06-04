@@ -1,4 +1,4 @@
-# LASU E-Voting System
+# NACOS E-Voting System
 
 A comprehensive student voting platform with secure authentication, document verification, and biometric face recognition.
 

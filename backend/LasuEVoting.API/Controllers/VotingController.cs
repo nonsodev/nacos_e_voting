@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using LasuEVoting.API.Services;
+using LasuEVoting.API.Services.Interfaces;
 
 namespace LasuEVoting.API.Controllers
 {

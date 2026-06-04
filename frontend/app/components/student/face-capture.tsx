@@ -104,14 +104,25 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
       const formData = new FormData();
       formData.append("File", blob, "face.jpg");
       formData.append("matricNumber", matricNumber);
-      const verifyResponse = await apiClient(
+      
+      // Use direct fetch for FormData to avoid content-type issues
+      const verifyResponse = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/student/verify-face`,
-        session?.accessToken,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
           body: formData,
         }
       );
+      
+      // Handle 401 errors manually since we're not using apiClient
+      if (verifyResponse.status === 401) {
+        toast.error("Your session has expired. Please sign in again.");
+        throw new Error("Session expired");
+      }
+      
       if (verifyResponse.ok) {
         toast.success("Face verification successful!");
         onSuccess();
@@ -123,7 +134,9 @@ export function FaceCapture({ matricNumber, onSuccess }: FaceCaptureProps) {
       }
     } catch (error) {
       console.error("An error occurred during verification:", error);
-      toast.error("An error occurred during verification");
+      if ((error as Error).message !== "Session expired") {
+        toast.error("An error occurred during verification");
+      }
     } finally {
       setIsVerifying(false);
     }

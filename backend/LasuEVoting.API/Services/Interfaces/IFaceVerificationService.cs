@@ -1,4 +1,4 @@
-namespace LasuEVoting.API.Services
+namespace LasuEVoting.API.Services.Interfaces
 {
     public interface IFaceVerificationService
     {

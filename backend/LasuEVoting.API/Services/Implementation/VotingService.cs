@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using LasuEVoting.API.Data;
 using LasuEVoting.API.Models;
+using LasuEVoting.API.Services.Interfaces;
 
 namespace LasuEVoting.API.Services
 {
@@ -17,12 +18,29 @@ namespace LasuEVoting.API.Services
 
         public async Task<IEnumerable<Position>> GetActivePositionsWithCandidatesAsync()
         {
-            return await _context.Positions
+            var customOrder = new List<string>
+                            {
+                                "Vice President",
+                                "Social Director",
+                                "Sport Director",
+                                "Public Relations Officer"
+                            };
+
+            var positions = await _context.Positions
                 .Where(p => p.IsActive)
                 .Include(p => p.Candidates.Where(c => c.IsActive))
-                .OrderBy(p => p.Title)
                 .ToListAsync();
+
+            var orderedPositions = positions
+                .OrderBy(p => {
+                    var index = customOrder.IndexOf(p.Title);
+                    return index == -1 ? int.MaxValue : index;
+                })
+                .ToList();
+
+            return orderedPositions;
         }
+
 
         public async Task<bool> CastVoteAsync(int userId, int positionId, int candidateId)
         {
